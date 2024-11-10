@@ -1,8 +1,11 @@
 /data
 /weights
 /work_dirs
+__pycache__/
+
 
 !
+*.pyc
 export
 test.log
 .pyc
