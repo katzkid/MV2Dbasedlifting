@@ -1,0 +1,7 @@
+/data
+/weights
+/work_dirs
+
+!
+export
+test.log
