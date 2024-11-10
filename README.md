@@ -1,4 +1,14 @@
 # MV2D
+# !wget https://www.nuscenes.org/data/v1.0-mini.tgz  # Download the nuScenes mini split.
+
+# !tar -xf v1.0-mini.tgz -C /data/sets/nuscenes  # Uncompress the nuScenes mini split.
+
+# !pip install nuscenes-devkit &> /dev/null  # Install nuScenes.
+
+Create data nuscenes: python -m tools.create_data nuscenes --root-path data/nuscenes --out-dir data/nuscenes --extra-tag nuscenes --version v1.0-mini
+
+train: bash tools/dist_train.sh configs/mv2d/exp/mv2d_r50_frcnn_single_frame_roi_1408x512_ep24.py 1
+
 This repo is the official PyTorch implementation for paper:   
 [Object as Query: Lifting any 2D Object Detector to 3D Detection](https://arxiv.org/abs/2301.02364). Accepted by ICCV 2023.
 
