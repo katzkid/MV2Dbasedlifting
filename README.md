@@ -1,3 +1,5 @@
+conda create -f MV2Denv.yml
+
 mkdir data
 
 cd data
