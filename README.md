@@ -1,3 +1,11 @@
+mkdir data
+
+cd data
+
+mkdir nuscenes
+
+cd nuscenes
+
 # MV2D
 # !wget https://www.nuscenes.org/data/v1.0-mini.tgz  # Download the nuScenes mini split.
 
