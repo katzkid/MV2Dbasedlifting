@@ -1,5 +1,9 @@
 conda create -f MV2Denv.yml
 
+mkdir weights
+
+download mask_rcnn_r50_fpn_1x_nuim_20201008_195238-e99f5182.pth in weights
+
 mkdir data
 
 cd data
