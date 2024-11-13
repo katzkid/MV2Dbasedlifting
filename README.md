@@ -1,4 +1,4 @@
-conda create -f MV2Denv.yml
+conda env create -f MV2Denv.yml
 
 mkdir weights
 
