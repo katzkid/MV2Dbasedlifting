@@ -1,0 +1,44 @@
+IMAGE
+
+INFOS
+
+
+
+	CAMS
+		camera intrinsic
+		timestamp = global value
+		camera extrinsic
+		gt_2D_boxes = 2D projected coordinates
+		gt_2D_labels = 2D labels
+	gt_boxes = 3D coordinates of bbox
+	gt_names = classification of 3D 
+	valid_flag = 1 for all
+	
+	
+Annotatio 2d file
+	annotations
+		list of annotations for all images
+		for each annotation:
+			filename of image
+			image id
+			area (in pixels) = del_x, del_y
+			category_name
+			category_id
+			bbox 2D coordinates (x, y, del_x, del_y)
+			iscrowd = 0 #to find out
+			bbox3D = x,y,z,d_x,d_y,d_z, yaw
+			center2D = 3 values list. #To find out
+			annotation id 
+	image
+		list of all images
+		for each image:
+			filename
+			image id
+			cam_intrinsic
+			width -- image width 1024
+			height -- image height 1024
+	category
+		label list
+	
+		
+

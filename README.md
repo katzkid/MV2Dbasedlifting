@@ -1,4 +1,4 @@
-conda create -f MV2Denv.yml
+conda env create -f MV2Denv.yml
 
 mkdir weights
 
@@ -11,6 +11,7 @@ cd data
 mkdir nuscenes
 
 cd nuscenes
+cd ../../
 
 # MV2D
 # !wget https://www.nuscenes.org/data/v1.0-mini.tgz  # Download the nuScenes mini split.
