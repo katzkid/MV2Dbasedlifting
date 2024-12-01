@@ -13,5 +13,10 @@ export
 test.log
 .pyc
 
+.env
+.idea/
+.vscode/
+
+
 
 
