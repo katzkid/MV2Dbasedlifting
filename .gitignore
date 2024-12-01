@@ -1,11 +1,17 @@
+.*/    # Ignore all hidden folders
+.*     # Ignore all hidden files
+!.gitignore
+
 /data
 /weights
 /work_dirs
 __pycache__/
-
 
 !
 *.pyc
 export
 test.log
 .pyc
+
+
+
