@@ -1,4 +1,5 @@
 # ------------------------------------------------------------------------
+# Modified from MV2D
 # Copyright (c) 2022 megvii-model. All Rights Reserved.
 # ------------------------------------------------------------------------
 # Modified from DETR3D (https://github.com/WangYueFt/detr3d)
@@ -17,3 +18,4 @@ from .models.detectors import MV2D
 from .models.utils.petr_transformer import PETRTransformer
 from .models.necks import *
 from .models.backbones import *
+from .datasets import CustomLIDCDataset

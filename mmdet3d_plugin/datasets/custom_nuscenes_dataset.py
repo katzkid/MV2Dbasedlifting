@@ -33,7 +33,6 @@ class CustomNuScenesDataset(NuScenesDataset):
         self.load_separate = load_separate
         self.ann_file_2d = ann_file_2d
         super(CustomNuScenesDataset, self).__init__(**kwargs)
-        self.skipped_images_count = 0 #debug code
         self.load_annotations_2d(ann_file_2d)
 
     def __len__(self):
@@ -82,7 +81,7 @@ class CustomNuScenesDataset(NuScenesDataset):
         for i in self.coco.get_img_ids():
             info = self.coco.load_imgs([i])[0]
             info['filename'] = info['file_name']
-            self.impath_to_imgid['data/nuscenes/' + info['file_name']] = i
+            self.impath_to_imgid['./data/nuscenes/' + info['file_name']] = i
             self.imgid_to_dataid[i] = len(data_infos)
             data_infos.append(info)
             ann_ids = self.coco.get_ann_ids(img_ids=[i])
@@ -92,11 +91,7 @@ class CustomNuScenesDataset(NuScenesDataset):
         self.data_infos_2d = data_infos
 
     def impath_to_ann2d(self, impath):
-        #print("Image path:", impath)  # Print out the path before looking up the ID
-        #print("Available keys:", self.impath_to_imgid.keys())  # Print out the available keys in the dictionary
         img_id = self.impath_to_imgid[impath]
-        if img_id is None:
-             raise KeyError(f"Image path '{impath}' not found in impath_to_imgid.")
         data_id = self.imgid_to_dataid[img_id]
         ann_ids = self.coco.get_ann_ids(img_ids=[img_id])
         ann_info = self.coco.load_anns(ann_ids)
@@ -178,12 +173,6 @@ class CustomNuScenesDataset(NuScenesDataset):
 
             for cam_i in range(len(image_paths)):
                 ann_2d = self.impath_to_ann2d(image_paths[cam_i])
-                #debug code
-                if ann_2d is None:
-                    self.skipped_images_count += 1
-                    if self.skipped_images_count % 100 == 0:
-                        logger.warning(f"Total skipped images: {self.skipped_images_count}")
-                    continue
                 labels_2d = ann_2d['labels']
                 bboxes_2d = ann_2d['bboxes_2d']
                 bboxes_ignore = ann_2d['gt_bboxes_ignore']

@@ -63,7 +63,7 @@ class NuScenes:
 
     def __init__(self,
                  version: str = 'v1.0-mini',
-                 dataroot: str = '/data/nuscenes',
+                 dataroot: str = '/data/sets/nuscenes',
                  verbose: bool = True,
                  map_resolution: float = 0.1,
                  annotations = "sample_annotation",

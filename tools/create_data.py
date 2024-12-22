@@ -6,11 +6,8 @@ from tools.data_converter import indoor_converter as indoor
 from tools.data_converter import kitti_converter as kitti
 from tools.data_converter import lyft_converter as lyft_converter
 from tools.data_converter import nuscenes_converter as nuscenes_converter
-from tools.data_converter import nuimage_converter as nuimages_converter
 from tools.data_converter.create_gt_database import (
     GTDatabaseCreater, create_groundtruth_database)
-
-from nuimages import NuImages 
 
 
 def kitti_data_prep(root_path,
@@ -52,39 +49,6 @@ def kitti_data_prep(root_path,
         relative_path=False,
         mask_anno_path='instances_train.json',
         with_mask=(version == 'mask'))
-    
-def nuimages_data_prep(root_path, info_prefix, version, dataset_name, out_dir, max_sweeps=10):
-    """Prepare data related to nuImages dataset.
-
-    Related data consists of '.pkl' files recording basic infos,
-    2D annotations and groundtruth database.
-
-    Args:
-        root_path (str): Path of dataset root.
-        info_prefix (str): The prefix of info filenames.
-        version (str): Dataset version.
-        dataset_name (str): The dataset class name.
-        out_dir (str): Output directory of the groundtruth database info.
-        max_sweeps (int, optional): Number of input consecutive frames. Default: 10
-    """
-    nuim = NuImages(dataroot=root_path, version=version, verbose=True, lazy=True)
-    # Create nuImages info files
-    nuimages_converter.export_nuim_to_coco(nuim, root_path, out_dir, args.extra_tag,
-                            version, args.workers)
-    
-    
-
-
-    #info_train_path = osp.join(root_path, f'{info_prefix}_infos_train.pkl')
-    #info_val_path = osp.join(root_path, f'{info_prefix}_infos_val.pkl')
-
-    # Export 2D annotations
-    #nuimages_converter.export_2d_annotation(root_path, info_train_path)
-    #nuimages_converter.export_2d_annotation(root_path, info_val_path)
-
-    #create_groundtruth_database(dataset_name, root_path, info_prefix,
-    #                             f'{out_dir}/{info_prefix}_infos_train.pkl')
-
 
 
 def nuscenes_data_prep(root_path,
@@ -114,23 +78,16 @@ def nuscenes_data_prep(root_path,
         info_test_path = osp.join(root_path, f'{info_prefix}_infos_test.pkl')
         nuscenes_converter.export_2d_annotation(
             root_path, info_test_path, version=version)
-        print('info_test=',info_test_path)
         return
 
     info_train_path = osp.join(root_path, f'{info_prefix}_infos_train.pkl')
     info_val_path = osp.join(root_path, f'{info_prefix}_infos_val.pkl')
-    print('info_train=',info_train_path)
-    print('info_val=',info_val_path)
-    
     nuscenes_converter.export_2d_annotation(
         root_path, info_train_path, version=version)
     nuscenes_converter.export_2d_annotation(
         root_path, info_val_path, version=version)
-    print('I am here!')
-    #create_groundtruth_database(dataset_name, root_path, info_prefix,
-    #                            f'{out_dir}/{info_prefix}_infos_train.pkl')
     create_groundtruth_database(dataset_name, root_path, info_prefix,
-                                f'{root_path}/{info_prefix}_infos_train.pkl')
+                                f'{out_dir}/{info_prefix}_infos_train.pkl')
 
 
 def lyft_data_prep(root_path, info_prefix, version, max_sweeps=10):
@@ -281,6 +238,14 @@ parser.add_argument(
 args = parser.parse_args()
 
 if __name__ == '__main__':
+
+    import os
+
+    print("Parsed root path:", args.root_path)
+    print("Absolute root path:", os.path.abspath(args.root_path))
+    print("Directory exists:", os.path.isdir(args.root_path))
+
+
     if args.dataset == 'kitti':
         kitti_data_prep(
             root_path=args.root_path,
@@ -288,33 +253,6 @@ if __name__ == '__main__':
             version=args.version,
             out_dir=args.out_dir,
             with_plane=args.with_plane)
-    elif args.dataset == 'nuimages' and args.version != 'v1.0-mini':
-        train_version = f'{args.version}-train'
-        nuimages_data_prep(
-            root_path=args.root_path,
-            info_prefix=args.extra_tag,
-            version=train_version,
-            dataset_name='NuImagesDataset',
-            out_dir=args.out_dir,
-            max_sweeps=args.max_sweeps)
-        val_version = f'{args.version}-val'
-        nuimages_data_prep(
-            root_path=args.root_path,
-            info_prefix=args.extra_tag,
-            version=val_version,
-            dataset_name='NuImagesDataset',
-            out_dir=args.out_dir,
-            max_sweeps=args.max_sweeps)
-    elif args.dataset == 'nuimages' and args.version == 'v1.0-mini':
-        train_version = f'{args.version}'
-        nuimages_data_prep(
-            root_path=args.root_path,
-            info_prefix=args.extra_tag,
-            version=train_version,
-            dataset_name='NuImagesDataset',
-            out_dir=args.out_dir,
-            max_sweeps=args.max_sweeps)
-
     elif args.dataset == 'nuscenes' and args.version != 'v1.0-mini':
         train_version = f'{args.version}-trainval'
         nuscenes_data_prep(
