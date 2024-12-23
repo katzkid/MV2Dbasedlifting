@@ -6,18 +6,15 @@
 /weights
 /work_dirs
 __pycache__/
+/tools/__pycache__
+/tools/data_converter/__pycache__
 
 !
 *.pyc
 export
 test.log
 .pyc
-
 .env
 .idea/
 .vscode/
 sandbox-browse-dataset/
-
-
-
-

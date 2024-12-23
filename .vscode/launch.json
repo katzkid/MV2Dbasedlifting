@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "pythonPath": "/home/kartik/miniforge3/envs/MV2Denv"
+            "pythonPath": "/home/kartik/anaconda3/envs/MV2Denv"
         }
     ]
 }
