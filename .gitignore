@@ -9,7 +9,6 @@ __pycache__/
 /tools/__pycache__
 /tools/data_converter/__pycache__
 
-!
 *.pyc
 export
 test.log
