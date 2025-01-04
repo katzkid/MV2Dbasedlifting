@@ -20,12 +20,12 @@ input_modality = dict(
     use_map=False,
     use_external=False)
 ida_aug_conf = {
-    "resize_lim": (0.8, 1.0),
-    "final_dim": (512, 1408),
+    "resize_lim": (1.0, 1.0),
+    "final_dim": (1024, 1024),
     "bot_pct_lim": (0.0, 0.0),
     "rot_lim": (0.0, 0.0),
-    "H": 900,
-    "W": 1600,
+    "H": 1024,
+    "W": 1024,
     "rand_flip": True,
 }
 
