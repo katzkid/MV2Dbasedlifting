@@ -3,8 +3,11 @@ _base_ = [
 ]
 
 class_names = [
-    'normal', 'nodule'
+    'nodule',
 ]
+
+# !TODO: use other attribute as class. 
+# class_name = ['nodule',]
 
 plugin_dir = 'mmdet3d_plugin/'
 dataset_type = 'CustomLIDCDataset'
@@ -20,8 +23,8 @@ input_modality = dict(
     use_map=False,
     use_external=False)
 ida_aug_conf = {
-    "resize_lim": (0.8, 1.0),
-    "final_dim": (512, 1408),
+    "resize_lim": (1.0, 1.0),
+    "final_dim": (1024, 1024),
     "bot_pct_lim": (0.0, 0.0),
     "rot_lim": (0.0, 0.0),
     "H": 900,
@@ -33,17 +36,17 @@ train_pipeline = [
     dict(type='LoadMultiViewImageFromFiles', to_float32=True),
     dict(type='PhotoMetricDistortionMultiViewImage'),
     dict(type='LoadAnnotationsMono3D', with_bbox_3d=True, with_label_3d=True, with_bbox_2d=True, with_attr_label=False),
-    dict(type='ObjectRangeFilterMono', point_cloud_range=point_cloud_range, with_bbox_2d=True),
+    # dict(type='ObjectRangeFilterMono', point_cloud_range=point_cloud_range, with_bbox_2d=True),
     dict(type='ObjectNameFilterMono', classes=class_names, with_bbox_2d=True),
     dict(type='ResizeCropFlipImageMono', data_aug_conf=ida_aug_conf, with_bbox_2d=True, training=True),
-    dict(type='GlobalRotScaleTransImage',
-         rot_range=[-0.3925, 0.3925],
-         translation_std=[0, 0, 0],
-         scale_ratio_range=[0.95, 1.05],
-         reverse_angle=True,
-         training=True
-         ),
-    dict(type='NormalizeMultiviewImage', **img_norm_cfg),
+    # dict(type='GlobalRotScaleTransImage',
+    #      rot_range=[-0.3925, 0.3925],
+    #      translation_std=[0, 0, 0],
+    #      scale_ratio_range=[0.95, 1.05],
+    #      reverse_angle=True,
+    #      training=True
+    #      ),
+    # dict(type='NormalizeMultiviewImage', **img_norm_cfg),
     dict(type='PadMultiViewImage', size_divisor=32),
     dict(type='DefaultFormatBundleMono3D', class_names=class_names),
     dict(type='CollectMono3D',
@@ -78,8 +81,13 @@ data = dict(
     train=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + 'lidc_infos_train.pkl',
-        ann_file_2d=data_root + 'lidc_infos_train_2d_anno.coco.json',
+        # ann_file=data_root + 'lidc_infos_train.pkl',
+        # ann_file_2d=data_root + 'lidc_infos_train_2d_anno.coco.json',
+
+        # Toy example use for debuf
+        ann_file=data_root + 'toy_infos_train.pkl',
+        ann_file_2d=data_root + 'toy_infos_train_2d_anno.coco.json',
+
         pipeline=train_pipeline,
         classes=class_names,
         modality=input_modality,
@@ -90,8 +98,8 @@ data = dict(
     val=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + 'nuscenes_infos_val.pkl',
-        ann_file_2d=data_root + 'nuscenes_infos_val_2d_anno.coco.json',
+        ann_file=data_root + 'lidc_infos_val.pkl',
+        ann_file_2d=data_root + 'lidc_infos_val_2d_anno.coco.json',
         pipeline=test_pipeline,
         classes=class_names,
         modality=input_modality,
@@ -101,11 +109,21 @@ data = dict(
     test=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + 'nuscenes_infos_val.pkl',
-        ann_file_2d=data_root + 'nuscenes_infos_val_2d_anno.coco.json',
+        ann_file=data_root + 'lidc_infos_val.pkl',
+        ann_file_2d=data_root + 'lidc_infos_val_2d_anno.coco.json',
         pipeline=test_pipeline,
         classes=class_names,
         modality=input_modality,
         test_mode=True,
         box_type_3d='Camera',
     ))
+
+# This pipeline is just to run test browse_dataset
+eval_pipeline = [
+    dict(type='LoadImageFromFileMono3D'),
+    dict(
+        type='DefaultFormatBundle3D',
+        class_names=class_names,
+        with_label=False),
+    dict(type='Collect3D', keys=['img'])
+]

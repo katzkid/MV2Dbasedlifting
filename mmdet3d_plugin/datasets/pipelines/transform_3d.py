@@ -25,7 +25,8 @@ from mmdet3d.datasets.pipelines.transforms_3d import ObjectRangeFilter, ObjectNa
 try:
     import albumentations
     from albumentations import Compose
-except ImportError:
+# except ImportError:
+except Exception:
     albumentations = None
     Compose = None
 from PIL import Image
@@ -561,7 +562,7 @@ class ResizeCropFlipImage(object):
 
 @PIPELINES.register_module()
 class ResizeCropFlipImageMono(ResizeCropFlipImage):
-    def __init__(self, with_bbox_2d=False, num_views=6, **kwargs):
+    def __init__(self, with_bbox_2d=False, num_views=10, **kwargs):
         super(ResizeCropFlipImageMono, self).__init__(**kwargs)
         self.with_bbox_2d = with_bbox_2d
         self.num_views = num_views
@@ -587,8 +588,11 @@ class ResizeCropFlipImageMono(ResizeCropFlipImage):
             results['intrinsics'][i][:3, :3] = ida_mat @ results['intrinsics'][i][:3, :3]
 
         results["img"] = new_imgs
-        results['lidar2img'] = [results['intrinsics'][i] @ results['extrinsics'][i].T for i in
-                                range(len(results['extrinsics']))]
+
+        # MV2D uses matrix-multiplication to calculate lidar2img matrix. 
+        # Comment our because we dont use this in LIDC dataset. 
+        # results['lidar2img'] = [results['intrinsics'][i] @ results['extrinsics'][i].T for i in
+        #                         range(len(results['extrinsics']))]
 
         if self.with_bbox_2d:
             gt_bboxes_2d = results['gt_bboxes_2d']
@@ -878,9 +882,13 @@ class GlobalRotScaleTransImage(object):
         if self.reverse_angle:
             rot_mat_inv = rot_mat
 
-        num_view = len(results["lidar2img"])
+        # modified from MV2D 
+        # we dont use lidar2img field. 
+        # num_view = len(results["lidar2img"])
+        num_view = len(results['img'])
+        
         for view in range(num_view):
-            results["lidar2img"][view] = (torch.tensor(results["lidar2img"][view]).float() @ rot_mat_inv).numpy()
+            # results["lidar2img"][view] = (torch.tensor(results["lidar2img"][view]).float() @ rot_mat_inv).numpy()
             results["extrinsics"][view] = (rot_mat_inv.T @ torch.tensor(results["extrinsics"][view]).float()).numpy()
         return
 
@@ -896,7 +904,8 @@ class GlobalRotScaleTransImage(object):
 
         rot_mat_inv = torch.inverse(rot_mat)
 
-        num_view = len(results["lidar2img"])
+        # num_view = len(results["lidar2img"])
+        num_view = len(results["img"])
         for view in range(num_view):
             results["lidar2img"][view] = (torch.tensor(results["lidar2img"][view]).float() @ rot_mat_inv).numpy()
             results["extrinsics"][view] = (rot_mat_inv.T @ torch.tensor(results["extrinsics"][view]).float()).numpy()
@@ -1067,7 +1076,6 @@ class PhotoMetricDistortionMultiViewImage:
         self.contrast_lower, self.contrast_upper = contrast_range
         self.saturation_lower, self.saturation_upper = saturation_range
         self.hue_delta = hue_delta
-
     def __call__(self, results):
         """Call function to perform photometric distortion on images.
         Args:

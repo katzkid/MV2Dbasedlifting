@@ -21,6 +21,7 @@ class LoadAnnotationsMono3D(LoadAnnotations3D):
         results['gt_bboxes_2d_to_3d'] = results['ann_info']['gt_bboxes_2d_to_3d']
         results['gt_bboxes_ignore'] = results['ann_info']['gt_bboxes_ignore']
         results['bbox2d_fields'].append('gt_bboxes_2d')
+        
         return results
 
     def __call__(self, results):

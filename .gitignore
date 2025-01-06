@@ -18,6 +18,14 @@ test.log
 .vscode/
 sandbox-browse-dataset/
 
+# ignore log and result folder
+work_dirs/
+weights/
+runs/
+
+# remove debug_var due to file size limit
+debug_var/
+
 
 
 

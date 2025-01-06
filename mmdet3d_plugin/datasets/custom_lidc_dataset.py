@@ -102,6 +102,19 @@ class CustomLIDCDataset(Custom3DDataset):
         return data_infos
     
 
+    def pre_pipeline(self, results):
+        results['img_fields'] = []
+        results['bbox3d_fields'] = []
+        results['bbox2d_fields'] = []
+        results['pts_mask_fields'] = []
+        results['pts_seg_fields'] = []
+        results['bbox_fields'] = []
+        results['mask_fields'] = []
+        results['seg_fields'] = []
+        results['box_type_3d'] = self.box_type_3d
+        results['box_mode_3d'] = self.box_mode_3d
+    
+
     def load_annotations_2d(self, ann_file):
         self.coco = COCO(ann_file)
         self.cat_ids = self.coco.get_cat_ids(cat_names=self.CLASSES)
@@ -113,7 +126,7 @@ class CustomLIDCDataset(Custom3DDataset):
         for i in self.coco.get_img_ids():
             info = self.coco.load_imgs([i])[0]
             info['filename'] = info['file_name']
-            self.impath_to_imgid['./data/lidc/' + info['file_name']] = i
+            self.impath_to_imgid['./data/lidc/Images/' + info['file_name']] = i
             self.imgid_to_dataid[i] = len(data_infos)
             data_infos.append(info)
             ann_ids = self.coco.get_ann_ids(img_ids=[i])
@@ -121,7 +134,138 @@ class CustomLIDCDataset(Custom3DDataset):
         assert len(set(total_ann_ids)) == len(
             total_ann_ids), f"Annotation ids in '{ann_file}' are not unique!"
         self.data_infos_2d = data_infos
-    
+
+
+    def impath_to_ann2d(self, impath):
+        img_id = self.impath_to_imgid[impath]
+        data_id = self.imgid_to_dataid[img_id]
+        ann_ids = self.coco.get_ann_ids(img_ids=[img_id])
+        ann_info = self.coco.load_anns(ann_ids)
+        return self.get_ann_info_2d(self.data_infos_2d[data_id], ann_info)
+
+
+    def get_data_info(self, index):
+        """Get data info according to the given index.
+        Modify from CustomeNuscenes Dataset class
+        Args:
+            index (int): Index of the sample data to get.
+        Returns:
+            dict: Data information that will be passed to the data \
+                preprocessing pipelines. It includes the following keys:
+
+                - sample_idx (str): Sample index.
+                - pts_filename (str): Filename of point clouds.
+                - sweeps (list[dict]): Infos of sweeps.
+                - timestamp (float): Sample timestamp.
+                - img_filename (str, optional): Image filename.
+                - lidar2img (list[np.ndarray], optional): Transformations \
+                    from lidar to different cameras.
+                - ann_info (dict): Annotation info.
+        """
+        if not self.load_separate:
+            info = self.data_infos[index]
+        else:
+            info = mmcv.load(self.data_infos[index], file_format='pkl')
+        # standard protocal modified from SECOND.Pytorch
+        input_dict = dict(
+            sample_idx=info['token'],
+            
+            # we don have Point Cloud and sweep for LIDC dataset
+            # pts_filename=info['lidar_path'],
+            # sweeps=info['sweeps'],
+            # timestamp=info['timestamp'] / 1e6,
+
+            timestamp=0
+        )
+
+        image_paths = []
+        lidar2img_rts = []
+        intrinsics = []
+        extrinsics = []
+        img_timestamp = []
+        for cam_type, cam_info in info['cams'].items():
+            img_timestamp.append(cam_info['timestamp'] / 1e6)
+            image_paths.append(cam_info['data_path'])
+
+            # # obtain lidar to image transformation matrix
+            # # comment out because we dont have this information in LIDC
+            # #
+            # lidar2cam_r = np.linalg.inv(cam_info['sensor2lidar_rotation'])
+            # lidar2cam_t = cam_info[
+            #                   'sensor2lidar_translation'] @ lidar2cam_r.T
+            # lidar2cam_rt = np.eye(4)
+            # lidar2cam_rt[:3, :3] = lidar2cam_r.T
+            # lidar2cam_rt[3, :3] = -lidar2cam_t
+            
+            intrinsic = cam_info['cam_intrinsic']
+            viewpad = np.eye(4)
+            viewpad[:intrinsic.shape[0], :intrinsic.shape[1]] = intrinsic
+            # lidar2img_rt = (viewpad @ lidar2cam_rt.T)
+            intrinsics.append(viewpad)
+            # extrinsics.append(
+            #     lidar2cam_rt)  ###The extrinsics mean the tranformation from lidar to camera. If anyone want to use the extrinsics as sensor to lidar, please use np.linalg.inv(lidar2cam_rt.T) and modify the ResizeCropFlipImage and LoadMultiViewImageFromMultiSweepsFiles.
+            # lidar2img_rts.append(lidar2img_rt)
+
+            # just for temporary solution
+            # add the intrinsic value to extrinsic list
+            # TODO: need to get the extrinsic infomation about camera
+            extrinsics.append(viewpad)
+
+        input_dict.update(
+            dict(
+                img_timestamp=img_timestamp,
+                img_filename=image_paths,
+                # lidar2img=lidar2img_rts,
+                intrinsics=intrinsics,
+                extrinsics=extrinsics
+            ))
+
+        input_dict['img_info'] = info
+        if not self.test_mode:
+            annos = self.get_ann_info(index)
+            input_dict['ann_info'] = annos
+
+            gt_bboxes_3d = annos['gt_bboxes_3d']  # 3d bboxes
+            gt_labels_3d = annos['gt_labels_3d']
+            gt_bboxes_2d = []  # per-view 2d bboxes
+            gt_bboxes_ignore = []  # per-view 2d bboxes
+            gt_bboxes_2d_to_3d = []  # mapping from per-view 2d bboxes to 3d bboxes
+            gt_labels_2d = []  # mapping from per-view 2d bboxes to 3d bboxes
+
+            for cam_i in range(len(image_paths)):
+                ann_2d = self.impath_to_ann2d(image_paths[cam_i])
+                labels_2d = ann_2d['labels']
+                bboxes_2d = ann_2d['bboxes_2d']
+                bboxes_ignore = ann_2d['gt_bboxes_ignore']
+                bboxes_cam = ann_2d['bboxes_cam']
+
+                # # Modify from MV2D
+                # # This part match the 2D bbox to 3D bbox for each camera
+                # # using matrix conversion from LIDAR to CAM
+                
+                # # Original code from MV2D
+                # lidar2cam = extrinsics[cam_i].T
+                # centers_lidar = gt_bboxes_3d.gravity_center.numpy()
+                # centers_lidar_hom = np.concatenate([centers_lidar, np.ones((len(centers_lidar), 1))], axis=1)
+                # centers_cam = (centers_lidar_hom @ lidar2cam.T)[:, :3]
+                # match = self.center_match(bboxes_cam, centers_cam)
+                # assert (labels_2d[match > -1] == gt_labels_3d[match[match > -1]]).all()
+
+                # for LIDC dataset: we assume that the 2D bbox and 3D bbox are recorded in order already
+                # thus the matching will be the index of bboxes_2d and bboxes_cam
+                match = np.arange(len(bboxes_2d))
+
+                gt_bboxes_2d.append(bboxes_2d)
+                gt_bboxes_2d_to_3d.append(match)
+                gt_labels_2d.append(labels_2d)
+                gt_bboxes_ignore.append(bboxes_ignore)
+
+            annos['gt_bboxes_2d'] = gt_bboxes_2d
+            annos['gt_labels_2d'] = gt_labels_2d
+            annos['gt_bboxes_2d_to_3d'] = gt_bboxes_2d_to_3d
+            annos['gt_bboxes_ignore'] = gt_bboxes_ignore
+        return input_dict
+
 
     def get_ann_info(self, index):
         """Get annotation info according to the given index.
@@ -190,7 +334,55 @@ class CustomLIDCDataset(Custom3DDataset):
                 depths, bboxes_ignore, masks, seg_map
         """
 
-        return NotImplementedError
+        gt_bboxes = []
+        gt_labels = []
+        gt_bboxes_ignore = []
+        gt_bboxes_cam3d = []
+        for i, ann in enumerate(ann_info_2d):
+            if ann.get('ignore', False):
+                continue
+            x1, y1, w, h = ann['bbox']
+            inter_w = max(0, min(x1 + w, img_info_2d['width']) - max(x1, 0))
+            inter_h = max(0, min(y1 + h, img_info_2d['height']) - max(y1, 0))
+            if inter_w * inter_h == 0:
+                continue
+            if ann['area'] <= 0 or w < 1 or h < 1:
+                continue
+            if ann['category_id'] not in self.cat_ids:
+                continue
+            bbox = [x1, y1, x1 + w, y1 + h]
+            if ann.get('iscrowd', False):
+                gt_bboxes_ignore.append(bbox)
+            else:
+                gt_bboxes.append(bbox)
+                gt_labels.append(self.cat2label[ann['category_id']])
+                bbox_cam3d = np.array(ann['bbox_cam3d']).reshape(1, -1)
+                bbox_cam3d = np.concatenate([bbox_cam3d], axis=-1)
+                gt_bboxes_cam3d.append(bbox_cam3d.squeeze())
+
+        if gt_bboxes:
+            gt_bboxes = np.array(gt_bboxes, dtype=np.float32)
+            gt_labels = np.array(gt_labels, dtype=np.int64)
+        else:
+            gt_bboxes = np.zeros((0, 4), dtype=np.float32)
+            gt_labels = np.array([], dtype=np.int64)
+
+        if gt_bboxes_cam3d:
+            gt_bboxes_cam3d = np.array(gt_bboxes_cam3d, dtype=np.float32)
+        else:
+            gt_bboxes_cam3d = np.zeros((0, 6), dtype=np.float32)
+
+        if gt_bboxes_ignore:
+            gt_bboxes_ignore = np.array(gt_bboxes_ignore, dtype=np.float32)
+        else:
+            gt_bboxes_ignore = np.zeros((0, 4), dtype=np.float32)
+
+        ann = dict(
+            bboxes_cam=gt_bboxes_cam3d,
+            bboxes_2d=gt_bboxes,
+            gt_bboxes_ignore=gt_bboxes_ignore,
+            labels=gt_labels, )
+        return ann
     
     def _evaluate_single(self,
                          result_path,

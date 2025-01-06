@@ -178,7 +178,7 @@ class CustomNuScenesDataset(NuScenesDataset):
                 bboxes_ignore = ann_2d['gt_bboxes_ignore']
                 bboxes_cam = ann_2d['bboxes_cam']
                 lidar2cam = extrinsics[cam_i].T
-
+                
                 centers_lidar = gt_bboxes_3d.gravity_center.numpy()
                 centers_lidar_hom = np.concatenate([centers_lidar, np.ones((len(centers_lidar), 1))], axis=1)
                 centers_cam = (centers_lidar_hom @ lidar2cam.T)[:, :3]
