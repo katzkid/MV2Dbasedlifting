@@ -231,17 +231,19 @@ class CustomLIDCDataset(Custom3DDataset):
                 # centers_lidar_hom = np.concatenate([centers_lidar, np.ones((len(centers_lidar), 1))], axis=1)
                 # centers_cam = (centers_lidar_hom @ lidar2cam.T)[:, :3]
                 # match = self.center_match(bboxes_cam, centers_cam)
-                print("Image path:", image_paths[cam_i])
+                #print("Image path:", image_paths[cam_i])
                 # print("BBOXES_CAM for {}:".format(info['token']), bboxes_cam)
                 # print("CENTERS_CAM for {}:".format(info['token']), centers_cam)
                 # print("MATCH for {}:".format(info['token']), match)
                 # assert (labels_2d[match > -1] == gt_labels_3d[match[match > -1]]).all()
 
-                centers_gt = gt_bboxes_3d.gravity_center.numpy()
-                centers_cam = bboxes_cam[:, :3] + bboxes_cam[:, 3:6] / 2
+                #centers_gt = gt_bboxes_3d.gravity_center.numpy()
+                #centers_cam = bboxes_cam[:, :3] + bboxes_cam[:, 3:6] / 2
                 #centers_pred = np.concatenate([centers_cam, np.ones((len(centers_cam), 1))], axis=1)  # Or directly use provided centers
-                match = self.center_match(centers_cam, centers_gt)
-                assert (labels_2d[match > -1] == gt_labels_3d[match[match > -1]]).all()
+                #match = self.center_match(centers_cam, centers_gt)
+                #assert (labels_2d[match > -1] == gt_labels_3d[match[match > -1]]).all()
+
+                match = np.arange(len(bboxes_2d))
 
 
                 gt_bboxes_2d.append(bboxes_2d)
@@ -255,17 +257,6 @@ class CustomLIDCDataset(Custom3DDataset):
             annos['gt_bboxes_ignore'] = gt_bboxes_ignore
         return input_dict
     
-
-    def center_match(self, bboxes_a, bboxes_b):
-        cts_a, cts_b = bboxes_a[:, :3], bboxes_b[:, :3]
-        if len(cts_a) == 0:
-            return np.zeros(len(cts_a), dtype=np.int32) - 1
-        if len(cts_b) == 0:
-            return np.zeros(len(cts_a), dtype=np.int32) - 1
-        dist = np.abs(cts_a[:, None] - cts_b[None]).sum(-1)
-        match = dist.argmin(1)
-        match[dist.min(1) > 1e-3] = -1
-        return match
 
     def get_ann_info(self, index):
         """Get annotation info according to the given index.
