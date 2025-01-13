@@ -8,5 +8,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 # ------------------------------------------------------------------------
 from .transform_3d import *
+from .transform_3d_lidc import *
 from .loading import *
 from .formatting import *
+from .formatting_lidc import *

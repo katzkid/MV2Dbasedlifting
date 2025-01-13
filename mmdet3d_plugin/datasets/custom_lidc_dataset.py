@@ -223,6 +223,9 @@ class CustomLIDCDataset(Custom3DDataset):
                 ann_2d = self.impath_to_ann2d(image_paths[cam_i])
                 labels_2d = ann_2d['labels']
                 bboxes_2d = ann_2d['bboxes_2d']
+                #debug remove last entry here
+                bboxes_2d = bboxes_2d[:-1]
+
                 bboxes_ignore = ann_2d['gt_bboxes_ignore']
                 bboxes_cam = ann_2d['bboxes_cam'] # 3d boxes from 2d annotation
                 lidar2cam = extrinsics[cam_i].T

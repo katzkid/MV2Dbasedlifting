@@ -150,6 +150,7 @@ class PadMultiViewImage(object):
         results['pad_shape'] = [img.shape for img in padded_img]
         results['pad_fixed_size'] = self.size
         results['pad_size_divisor'] = self.size_divisor
+        print('I AM HERE pad_shape', results['pad_shape'])
 
     def __call__(self, results):
         """Call function to pad images, masks, semantic segmentation maps.
