@@ -17,7 +17,7 @@ class CollectMono3DLIDC(Collect3D):
         meta_keys=('filename', 'box_mode_3d', 'box_type_3d', 'sample_idx',
                    'intrinsics', 'extrinsics', 'timestamp', 'pad_shape', 'img_shape'),
         debug=False,
-        classes=('normal','nodule'),
+        classes=('nodule'),
     ):
         super(CollectMono3DLIDC, self).__init__(keys, meta_keys)
         self.debug = debug
