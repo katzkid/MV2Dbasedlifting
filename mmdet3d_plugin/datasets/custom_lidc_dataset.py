@@ -22,6 +22,7 @@ from mmdet3d.datasets import NuScenesMonoDataset, NuScenesDataset, Custom3DDatas
 import os
 import copy
 from mmdet3d.core.bbox import CameraInstance3DBoxes, LiDARInstance3DBoxes, get_box_type, Box3DMode
+from sandbox.extrinsic_params_calculator import compute_extrinsics, extrinsic_to_homogeneous #extrinsic params computation
 
 
 @DATASETS.register_module()
@@ -177,6 +178,26 @@ class CustomLIDCDataset(Custom3DDataset):
         #lidar2img_rts = []
         intrinsics = []
         extrinsics = []
+        ###################################################################################
+        # Compute extrinsics
+        num_cameras = 10
+        angle_step = 360 / num_cameras  # Angle separation between cameras
+        radius = 1  # Distance from the origin
+
+        # Compute extrinsics for all cameras
+        extrinsics_local = []
+        for i in range(num_cameras):
+            theta = i * angle_step
+            R, t = compute_extrinsics(theta, radius)
+            extrinsics_local.append((R, t))
+            
+        # Display the extrinsics
+        #extrinsics
+
+        # Compute homogeneous extrinsic matrices for all cameras
+        homogeneous_extrinsics = [extrinsic_to_homogeneous(R, t) for R, t in extrinsics_local]
+        extrinsics = homogeneous_extrinsics #add homogeous extrinsic values
+        ###################################################################################
         img_timestamp = []
         for cam_type, cam_info in info['cams'].items():
             img_timestamp.append(cam_info['timestamp'] / 1e6)
@@ -196,7 +217,7 @@ class CustomLIDCDataset(Custom3DDataset):
             #extrinsics.append(
             #    lidar2cam_rt)  ###The extrinsics mean the tranformation from lidar to camera. If anyone want to use the extrinsics as sensor to lidar, please use np.linalg.inv(lidar2cam_rt.T) and modify the ResizeCropFlipImage and LoadMultiViewImageFromMultiSweepsFiles.
             #lidar2img_rts.append(lidar2img_rt)
-            extrinsics.append(np.eye(4))
+            #extrinsics.append(np.eye(4))
 
         input_dict.update(
             dict(
