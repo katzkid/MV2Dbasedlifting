@@ -139,12 +139,6 @@ class MV2D(Base3DDetector):
 
         losses = dict()
         batch_size, num_views, c, h, w = img.shape 
-        print('imgmetas_sample_idx', img_metas[0]['sample_idx']) #debug
-        print('batch_size:', batch_size)
-        print('num_views:', num_views)
-        print('c:', c)
-        print('h:', h)
-        print('w:', w)
         img = img.view(batch_size * num_views, *img.shape[2:])
         assert batch_size == 1, 'only support batch_size 1 now'
 
@@ -160,7 +154,7 @@ class MV2D(Base3DDetector):
         gt_bboxes, gt_labels, gt_bboxes_3d, gt_labels_3d, gt_bboxes_ignore, img_metas = [], [], [], [], [], []
         for i in range(batch_size):
             img_metas_views = ori_img_metas[i]
-            print('img_metas_views:', img_metas_views.keys()) #debug
+            #print('img_metas_views:', img_metas_views.keys()) #debug
 
             for j in range(num_views):
                 img_meta = dict(num_views=num_views)
@@ -176,9 +170,9 @@ class MV2D(Base3DDetector):
             gt_labels_3d_views = ori_gt_labels_3d[i]
             gt_bboxes_3d_views = ori_gt_bboxes_3d[i].to(gt_labels_3d_views.device)
             for j in range(num_views):
-                print('j=', j) #debug
-                print('gt_bboxes_2d_to_3d:', gt_bboxes_2d_to_3d[i][j]) #debug
-                print('Shape of gt_bboxes_2d_to_3d = {} at j={}:', gt_bboxes_2d_to_3d[i][j].shape, j) #debug
+                #print('j=', j) #debug
+                #print('gt_bboxes_2d_to_3d:', gt_bboxes_2d_to_3d[i][j]) #debug
+                #print('Shape of gt_bboxes_2d_to_3d = {} at j={}:', gt_bboxes_2d_to_3d[i][j].shape, j) #debug
                 gt_ids = (gt_bboxes_2d_to_3d[i][j]).unique()
                 select = gt_ids[gt_ids > -1].long()
                 gt_bboxes_3d.append(gt_bboxes_3d_views[select])
@@ -203,9 +197,10 @@ class MV2D(Base3DDetector):
 
         # generate 2D detection
         self.base_detector.set_detection_cfg(self.train_cfg.get('detection_proposal'))
+        #breakpoint() #debug
         with torch.no_grad():
             results = self.base_detector.simple_test_w_feat(detector_feat, img_metas)
-
+        #breakpoint() #debug
         # process 2D detection
         detections = self.process_2d_detections(results, img.device)
         if self.train_cfg.get('complement_2d_gt', -1) > 0:
@@ -215,7 +210,7 @@ class MV2D(Base3DDetector):
 
         # calculate losses for 3d detector
         feat = self.process_detector_feat(detector_feat)
-
+        #breakpoint() #debug
         roi_losses = self.roi_head.forward_train(feat, img_metas, detections, gt_bboxes, gt_labels,
                                                  gt_bboxes_3d, gt_labels_3d,
                                                  ori_gt_bboxes_3d, ori_gt_labels_3d,

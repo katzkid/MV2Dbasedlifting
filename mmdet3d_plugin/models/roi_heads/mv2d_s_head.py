@@ -183,6 +183,7 @@ class MV2DSHead(MV2DHead):
 
             corr_feats = bbox_feats[corr]  # [num_rois, num_corrs, c, h, w]
             corr_pe = pe[corr]
+            #breakpoint()#debug
             all_cls_scores, all_bbox_preds = self.bbox_head(reference_points[:, None],
                                                             corr_feats,
                                                             ~mask[..., None, None].expand_as(corr_feats[:, :, 0]),
@@ -267,7 +268,7 @@ class MV2DSHead(MV2DHead):
         if self.use_denoise:
             img_metas[0]['gt_bboxes_3d'] = ori_gt_bboxes_3d[0]
             img_metas[0]['gt_labels_3d'] = ori_gt_labels_3d[0]
-
+        
         results_from_last = self._bbox_forward_train(x, proposal_boxes, img_metas)
         preds = results_from_last['pred']
 

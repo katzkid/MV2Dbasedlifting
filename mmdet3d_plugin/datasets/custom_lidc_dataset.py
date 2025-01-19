@@ -22,7 +22,7 @@ from mmdet3d.datasets import NuScenesMonoDataset, NuScenesDataset, Custom3DDatas
 import os
 import copy
 from mmdet3d.core.bbox import CameraInstance3DBoxes, LiDARInstance3DBoxes, get_box_type, Box3DMode
-from sandbox.extrinsic_params_calculator import compute_extrinsics, extrinsic_to_homogeneous #extrinsic params computation
+from sandbox.extrinsic_params_calculator import compute_extrinsics, extrinsic_to_homogeneous, world_to_camera_frame #extrinsic params computation
 
 
 @DATASETS.register_module()
@@ -182,7 +182,7 @@ class CustomLIDCDataset(Custom3DDataset):
         # Compute extrinsics
         num_cameras = 10
         angle_step = 360 / num_cameras  # Angle separation between cameras
-        radius = 1  # Distance from the origin
+        radius = 0.3  # Distance from the origin
 
         # Compute extrinsics for all cameras
         extrinsics_local = []
@@ -219,11 +219,14 @@ class CustomLIDCDataset(Custom3DDataset):
             #lidar2img_rts.append(lidar2img_rt)
             #extrinsics.append(np.eye(4))
 
+        #let Extrinsics be lidar2img
+
         input_dict.update(
             dict(
                 img_timestamp=img_timestamp,
                 img_filename=image_paths,
                 #lidar2img=lidar2img_rts,
+                lidar2img=extrinsics,
                 intrinsics=intrinsics,
                 extrinsics=extrinsics
             ))
@@ -244,8 +247,10 @@ class CustomLIDCDataset(Custom3DDataset):
                 ann_2d = self.impath_to_ann2d(image_paths[cam_i])
                 labels_2d = ann_2d['labels']
                 bboxes_2d = ann_2d['bboxes_2d']
+                
                 #debug remove last entry here
                 bboxes_2d = bboxes_2d[:-1]
+                labels_2d = labels_2d[:-1]
 
                 bboxes_ignore = ann_2d['gt_bboxes_ignore']
                 bboxes_cam = ann_2d['bboxes_cam'] # 3d boxes from 2d annotation
@@ -261,11 +266,11 @@ class CustomLIDCDataset(Custom3DDataset):
                 # print("MATCH for {}:".format(info['token']), match)
                 # assert (labels_2d[match > -1] == gt_labels_3d[match[match > -1]]).all()
 
-                #centers_gt = gt_bboxes_3d.gravity_center.numpy()
-                #centers_cam = bboxes_cam[:, :3] + bboxes_cam[:, 3:6] / 2
-                #centers_pred = np.concatenate([centers_cam, np.ones((len(centers_cam), 1))], axis=1)  # Or directly use provided centers
-                #match = self.center_match(centers_cam, centers_gt)
-                #assert (labels_2d[match > -1] == gt_labels_3d[match[match > -1]]).all()
+                # centers_gt = gt_bboxes_3d.gravity_center.numpy()
+                # centers_cam = bboxes_cam[:, :3] + bboxes_cam[:, 3:6] / 2
+                # centers_pred = np.concatenate([centers_cam, np.ones((len(centers_cam), 1))], axis=1)  # Or directly use provided centers
+                # match = self.center_match(centers_cam, centers_gt)
+                # assert (labels_2d[match > -1] == gt_labels_3d[match[match > -1]]).all()
 
                 match = np.arange(len(bboxes_2d))
 
@@ -297,6 +302,25 @@ class CustomLIDCDataset(Custom3DDataset):
                 - gt_labels_3d (np.ndarray): Labels of ground truths.
                 - gt_names (list[str]): Class names of ground truths.
         """
+        ###################################################################################
+        # Compute extrinsics
+        num_cameras = 10
+        angle_step = 360 / num_cameras  # Angle separation between cameras
+        radius = 0.3  # Distance from the origin
+
+        # Compute extrinsics for all cameras
+        extrinsics_local = []
+        for i in range(num_cameras):
+            theta = i * angle_step
+            R, t = compute_extrinsics(theta, radius)
+            extrinsics_local.append((R, t))
+            
+        # Display the extrinsics
+        #extrinsics
+
+        # Compute homogeneous extrinsic matrices for all cameras
+        homogeneous_extrinsics = [extrinsic_to_homogeneous(R, t) for R, t in extrinsics_local]
+        ###################################################################################
         if not self.load_separate:
             info = self.data_infos[index]
         else:
@@ -307,6 +331,18 @@ class CustomLIDCDataset(Custom3DDataset):
         # else:
         #     mask = info['num_lidar_pts'] > 0
         gt_bboxes_3d = info['gt_boxes']
+        #print("gt_bboxes_3d", gt_bboxes_3d)
+        # Extract the first three coordinates of each bounding box
+        gt_bboxes_3d_coords = np.array([bbox[:3] for bbox in gt_bboxes_3d])
+
+        # Convert to camera coordinates
+        gt_bboxes_3d_coords_cam = world_to_camera_frame(gt_bboxes_3d_coords, homogeneous_extrinsics[:1])
+
+        # Update the original bounding boxes with the transformed coordinates
+        for i in range(len(gt_bboxes_3d)):
+            gt_bboxes_3d[i][:3] = gt_bboxes_3d_coords_cam[i][0]
+        #print("CAM_gt_bboxes_3d", gt_bboxes_3d)
+
         gt_names_3d = info['gt_names']
         gt_labels_3d = []
         for cat in gt_names_3d:
@@ -348,6 +384,22 @@ class CustomLIDCDataset(Custom3DDataset):
                 gt_bboxes_3d, gt_labels_3d, attr_labels, centers2d,
                 depths, bboxes_ignore, masks, seg_map
         """
+        ###################################################################################
+        num_cameras = 10
+        angle_step = 360 / num_cameras  # Angle separation between cameras
+        radius = 0.3  # Distance from the origin
+
+        # Compute extrinsics for all cameras
+        extrinsics = []
+        for i in range(num_cameras):
+            theta = i * angle_step
+            R, t = compute_extrinsics(theta, radius)
+            extrinsics.append((R, t))
+            
+        # Compute homogeneous extrinsic matrices for all cameras
+        homogeneous_extrinsics = [extrinsic_to_homogeneous(R, t) for R, t in extrinsics]
+        ###################################################################################
+        
         gt_bboxes = []
         gt_labels = []
         gt_bboxes_ignore = []
@@ -371,6 +423,10 @@ class CustomLIDCDataset(Custom3DDataset):
                gt_bboxes.append(bbox)
                gt_labels.append(self.cat2label[ann['category_id']])
                bbox_cam3d = np.array(ann['bbox_cam3d']).reshape(1, -1)
+               #print("bbox_cam3d_world", bbox_cam3d[0][:3])
+               #convert to camera instance 3d boxes
+               bbox_cam3d[0][:3] = np.array(world_to_camera_frame(np.array([bbox_cam3d[0][:3]]), homogeneous_extrinsics[:1])[0])
+               #print("CAM_bbox_cam3d", bbox_cam3d)
                bbox_cam3d = np.concatenate([bbox_cam3d], axis=-1)
                gt_bboxes_cam3d.append(bbox_cam3d.squeeze())
 

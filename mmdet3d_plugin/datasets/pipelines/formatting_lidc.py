@@ -15,7 +15,7 @@ class CollectMono3DLIDC(Collect3D):
         self,
         keys,
         meta_keys=('filename', 'box_mode_3d', 'box_type_3d', 'sample_idx',
-                   'intrinsics', 'extrinsics', 'timestamp', 'pad_shape', 'img_shape'),
+                   'intrinsics', 'extrinsics', 'timestamp', 'pad_shape', 'img_shape', 'scale_factor', 'lidar2img'),
         debug=False,
         classes=('nodule'),
     ):

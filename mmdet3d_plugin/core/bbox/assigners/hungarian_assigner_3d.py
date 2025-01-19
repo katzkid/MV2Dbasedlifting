@@ -100,7 +100,6 @@ class HungarianAssigner3D(BaseAssigner):
         assert gt_bboxes_ignore is None, \
             'Only case when gt_bboxes_ignore is None is supported.'
         num_gts, num_bboxes = gt_bboxes.size(0), bbox_pred.size(0)
-
         # 1. assign -1 by default
         assigned_gt_inds = bbox_pred.new_full((num_bboxes, ),
                                               -1,
@@ -118,8 +117,12 @@ class HungarianAssigner3D(BaseAssigner):
 
         # 2. compute the weighted costs
         # classification and bboxcost.
-        cls_cost = self.cls_cost(cls_pred, gt_labels)
+        #added here for LIDC. Hopefully it will not hamper NuScenes
+        if gt_labels.dim() == 1:
+            gt_labels_unsqueeze = gt_labels.unsqueeze(-1)  # Shape becomes [M, 1]
+        cls_cost = self.cls_cost(cls_pred, gt_labels_unsqueeze)
         # regression L1 cost
+        #breakpoint()#debug
         normalized_gt_bboxes = normalize_bbox(gt_bboxes, self.pc_range)
         reg_cost = self.reg_cost(bbox_pred[:, :8], normalized_gt_bboxes[:, :8])
       

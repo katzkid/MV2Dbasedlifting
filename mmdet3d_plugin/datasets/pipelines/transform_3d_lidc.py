@@ -64,6 +64,7 @@ class PhotoMetricDistortionMultiViewImageXray:
         """
         imgs = results['img']
         new_imgs = []
+        scale_factors = []
         for img in imgs:
             assert img.dtype == np.float32, \
                 'PhotoMetricDistortion needs the input image of dtype np.float32,' \
@@ -84,9 +85,9 @@ class PhotoMetricDistortionMultiViewImageXray:
                     img *= alpha
 
             # Gamma correction
-            if np.random.randint(2):
-                gamma = np.random.uniform(0.8, 1.2)
-                img = img ** gamma
+            # if np.random.randint(2):
+            #     gamma = np.random.uniform(0.8, 1.2)
+            #     img = img ** gamma
 
             # Gaussian noise
             if np.random.randint(2):
@@ -121,7 +122,9 @@ class PhotoMetricDistortionMultiViewImageXray:
 
             
             new_imgs.append(img)
+            scale_factors.append(1.0)
         results['img'] = new_imgs
+        results['scale_factor'] = scale_factors
         return results
 
     def __repr__(self):

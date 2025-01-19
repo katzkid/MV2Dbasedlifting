@@ -273,6 +273,7 @@ class CrossAttentionBoxHead(BaseModule):
 
         num_bboxes = bbox_pred.size(0)
         # assigner and sampler
+        #breakpoint()#debug
         assign_result = self.assigner.assign(bbox_pred, cls_score, gt_bboxes,
                                              gt_labels, gt_bboxes_ignore)
         sampling_result = self.sampler.sample(assign_result, bbox_pred,
@@ -386,6 +387,7 @@ class CrossAttentionBoxHead(BaseModule):
                     gt_bboxes_ignore_list=None):
 
         num_imgs = len(cls_scores)
+        #breakpoint()#debug
         cls_scores_list = [cls_scores[i] for i in range(num_imgs)]
         bbox_preds_list = [bbox_preds[i] for i in range(num_imgs)]
         if cls_reg_targets is None:
@@ -424,7 +426,7 @@ class CrossAttentionBoxHead(BaseModule):
         normalized_bbox_targets = normalize_bbox(bbox_targets, None)
         isnotnan = torch.isfinite(normalized_bbox_targets).all(dim=-1)
         bbox_weights = bbox_weights * self.code_weights
-
+        #breakpoint()#debug
         loss_bbox = self.loss_bbox(
             bbox_preds[isnotnan, :10], normalized_bbox_targets[isnotnan, :10], bbox_weights[isnotnan, :10],
             avg_factor=num_total_pos)
@@ -442,7 +444,7 @@ class CrossAttentionBoxHead(BaseModule):
         assert gt_bboxes_ignore is None, \
             f'{self.__class__.__name__} only supports ' \
             f'for gt_bboxes_ignore setting to None.'
-
+        #breakpoint()#debug
         cls_scores = preds_dicts['cls_scores']
         bbox_preds = preds_dicts['bbox_preds']
 

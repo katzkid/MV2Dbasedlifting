@@ -50,7 +50,8 @@ model = dict(
             out_channels=512, ),
         bbox_head=dict(
             type='CrossAttentionBoxHead',
-            num_classes=10,
+            num_classes=1,
+            group_reg_dims=(2,2,2,2), #added group_reg_dims
             pc_range=point_cloud_range,
             transformer=dict(
                 type='MV2DTransformer',
@@ -83,8 +84,9 @@ model = dict(
                 post_center_range=post_range,
                 pc_range=point_cloud_range,
                 max_num=300,
-                num_classes=10),
-            code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.5, 1.5, 2.0, 2.0],
+                num_classes=1),
+            #code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.5, 1.5, 2.0, 2.0],
+            code_weights=[1.0],
             loss_cls=dict(
                 type='FocalLoss',
                 use_sigmoid=True,
@@ -131,7 +133,8 @@ model = dict(
             stage_loss_weights=[0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
             assigner=dict(
                 type='HungarianAssigner3D',
-                cls_cost=dict(type='FocalLossCost', weight=2.0),
+                #cls_cost=dict(type='FocalLossCost', weight=2.0),
+                cls_cost=dict(type='FocalLossCost', weight=2.0, binary_input=True, ),
                 reg_cost=dict(type='BBox3DL1Cost', weight=0.25),
                 iou_cost=dict(type='IoUCost', weight=0.0),
                 # Fake cost. This is just to make it compatible with DETR head.

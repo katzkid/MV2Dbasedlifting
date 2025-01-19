@@ -45,11 +45,13 @@ class TwoStageDetBase(TwoStageDetector):
         x = feat
 
         losses = dict()
-
+        gt_bboxes_np = gt_bboxes[0].detach().cpu().numpy() #debug
+        print("gtbboxes shape: ", gt_bboxes_np.shape)#debug
         # RPN forward and loss
         if self.with_rpn:
             proposal_cfg = self.train_cfg.get('rpn_proposal',
                                               self.test_cfg.rpn)
+            #breakpoint()#debug
             rpn_losses, proposal_list = self.rpn_head.forward_train(
                 x,
                 img_metas,
@@ -59,14 +61,18 @@ class TwoStageDetBase(TwoStageDetector):
                 proposal_cfg=proposal_cfg,
                 **kwargs)
             losses.update(rpn_losses)
+            #breakpoint()#debug
+            print("START:img_metas[sample_idx]: ", img_metas[0]['sample_idx'])#debug
+
         else:
             proposal_list = proposals
-
+        #breakpoint()#debug
         roi_losses = self.roi_head.forward_train(x, img_metas, proposal_list,
                                                  gt_bboxes, gt_labels,
                                                  gt_bboxes_ignore, gt_masks,
                                                  **kwargs)
         losses.update(roi_losses)
+        print("DONE:img_metas[sample_idx]: ", img_metas[0]['sample_idx'])#debug
 
         return losses
 
