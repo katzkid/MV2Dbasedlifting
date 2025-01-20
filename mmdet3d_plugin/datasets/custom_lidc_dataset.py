@@ -175,7 +175,7 @@ class CustomLIDCDataset(Custom3DDataset):
         )
 
         image_paths = []
-        #lidar2img_rts = []
+        lidar2img_rts = []
         intrinsics = []
         extrinsics = []
         ###################################################################################
@@ -200,6 +200,7 @@ class CustomLIDCDataset(Custom3DDataset):
         ###################################################################################
         img_timestamp = []
         for cam_type, cam_info in info['cams'].items():
+            cam_idx = int(cam_type.split('_')[-1])#added index for cameras
             img_timestamp.append(cam_info['timestamp'] / 1e6)
             image_paths.append(cam_info['data_path'])
             # obtain lidar to image transformation matrix
@@ -209,14 +210,15 @@ class CustomLIDCDataset(Custom3DDataset):
             #lidar2cam_rt = np.eye(4)
             #lidar2cam_rt[:3, :3] = lidar2cam_r.T
             #lidar2cam_rt[3, :3] = -lidar2cam_t
+            lidar2cam_rt = extrinsics[cam_idx]
             intrinsic = cam_info['cam_intrinsic']
             viewpad = np.eye(4)
             viewpad[:intrinsic.shape[0], :intrinsic.shape[1]] = intrinsic
-            #lidar2img_rt = (viewpad @ lidar2cam_rt.T)
+            lidar2img_rt = (viewpad @ lidar2cam_rt.T)
             intrinsics.append(viewpad)
             #extrinsics.append(
             #    lidar2cam_rt)  ###The extrinsics mean the tranformation from lidar to camera. If anyone want to use the extrinsics as sensor to lidar, please use np.linalg.inv(lidar2cam_rt.T) and modify the ResizeCropFlipImage and LoadMultiViewImageFromMultiSweepsFiles.
-            #lidar2img_rts.append(lidar2img_rt)
+            lidar2img_rts.append(lidar2img_rt)
             #extrinsics.append(np.eye(4))
 
         #let Extrinsics be lidar2img
@@ -225,8 +227,7 @@ class CustomLIDCDataset(Custom3DDataset):
             dict(
                 img_timestamp=img_timestamp,
                 img_filename=image_paths,
-                #lidar2img=lidar2img_rts,
-                lidar2img=extrinsics,
+                lidar2img=lidar2img_rts,
                 intrinsics=intrinsics,
                 extrinsics=extrinsics
             ))
@@ -254,7 +255,7 @@ class CustomLIDCDataset(Custom3DDataset):
 
                 bboxes_ignore = ann_2d['gt_bboxes_ignore']
                 bboxes_cam = ann_2d['bboxes_cam'] # 3d boxes from 2d annotation
-                lidar2cam = extrinsics[cam_i].T
+                #lidar2cam = extrinsics[cam_i]
 
                 # centers_lidar = gt_bboxes_3d.gravity_center.numpy()
                 # centers_lidar_hom = np.concatenate([centers_lidar, np.ones((len(centers_lidar), 1))], axis=1)
