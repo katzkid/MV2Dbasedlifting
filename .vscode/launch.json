@@ -5,12 +5,37 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: Current File",
+            "name": "Debug LIDC train",
             "type": "debugpy",
             "request": "launch",
-            "program": "${file}",
+            "program": "${workspaceFolder}/tools/train.py",
             "console": "integratedTerminal",
-            "pythonPath": "/home/katzkid/miniforge3/envs/MV2Denv"
+            "args": [
+                "configs/lidc/model/mv2d_r50_frcnn_single_frame_roi_1024x1024_ep24_lidc.py"
+            ],
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Python: Debug browse_dataset",
+            "type": "debugpy",
+            "request": "launch",
+            // "program": "${workspaceFolder}/tools/misc/browse_dataset.py",
+            "program": "${file}",
+            "args": [
+                "configs/lidc/data/lidc.py",
+                "--task",
+                "mono-det",
+                "--output-dir",
+                "${env:OUTPUT_DIR}"
+            ],
+            "console": "integratedTerminal",
+            "env": {
+                "OUTPUT_DIR": "sandbox-browse-dataset/lidc-browse-dataset"
+            },
+            "justMyCode": false
         }
     ]
 }

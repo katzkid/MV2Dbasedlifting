@@ -80,8 +80,14 @@ data = dict(
     train=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + 'lidc_infos_train.pkl',
-        ann_file_2d=data_root + 'lidc_infos_train_2d_anno.coco.json',
+        # ann_file=data_root + 'lidc_infos_train.pkl',
+        # ann_file_2d=data_root + 'lidc_infos_train_2d_anno.coco.json',
+
+        # Toy example use for debug
+        ann_file=data_root + 'toy_infos_train.pkl',
+        ann_file_2d=data_root + 'toy_infos_train_2d_anno.coco.json',
+
+        
         pipeline=train_pipeline,
         classes=class_names,
         modality=input_modality,

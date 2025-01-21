@@ -21,8 +21,17 @@ from mmdet.datasets import DATASETS
 from mmdet3d.datasets import NuScenesMonoDataset, NuScenesDataset, Custom3DDataset
 import os
 import copy
-from mmdet3d.core.bbox import CameraInstance3DBoxes, LiDARInstance3DBoxes, get_box_type, Box3DMode
-from sandbox.extrinsic_params_calculator import compute_extrinsics, extrinsic_to_homogeneous, world_to_camera_frame #extrinsic params computation
+from mmdet3d.core.bbox import (
+    CameraInstance3DBoxes,
+    LiDARInstance3DBoxes,
+    get_box_type,
+    Box3DMode,
+)
+from sandbox.extrinsic_params_calculator import (
+    compute_extrinsics,
+    extrinsic_to_homogeneous,
+    world_to_camera_frame,
+)  # extrinsic params computation
 
 
 @DATASETS.register_module()
@@ -32,24 +41,26 @@ class CustomLIDCDataset(Custom3DDataset):
     """
 
     # replace with all the classes in customized pkl info file
-    CLASSES = ('nodule')
+    CLASSES = "nodule"
 
-    def __init__(self,
-            ann_file,
-            ann_file_2d, 
-            pipeline=None,
-            data_root=None,
-            classes=None,
-            load_interval=1,
-            with_velocity=False,
-            modality=None,
-            box_type_3d='Camera',
-            filter_empty_gt=False,
-            test_mode=False,
-            eval_version='detection_cvpr_2019',
-            load_separate=False, 
-            use_valid_flag=False):        
-         
+    def __init__(
+        self,
+        ann_file,
+        ann_file_2d,
+        pipeline=None,
+        data_root=None,
+        classes=None,
+        load_interval=1,
+        with_velocity=False,
+        modality=None,
+        box_type_3d="Camera",
+        filter_empty_gt=False,
+        test_mode=False,
+        eval_version="detection_cvpr_2019",
+        load_separate=False,
+        use_valid_flag=False,
+    ):
+
         self.ann_file = ann_file
         self.ann_file_2d = ann_file_2d
         self.load_interval = load_interval
@@ -66,8 +77,9 @@ class CustomLIDCDataset(Custom3DDataset):
             modality=modality,
             box_type_3d=box_type_3d,
             filter_empty_gt=filter_empty_gt,
-            test_mode=test_mode)
-        
+            test_mode=test_mode,
+        )
+
         if self.modality is None:
             self.modality = dict(
                 use_camera=True,
@@ -81,38 +93,40 @@ class CustomLIDCDataset(Custom3DDataset):
 
     def __len__(self):
         return super(CustomLIDCDataset, self).__len__()
-    
+
     def load_annotations(self, ann_file):
-        data = mmcv.load(ann_file, file_format='pkl')
-        data_infos_ori = data_infos = list(sorted(data['infos'], key=lambda e: e['token']))
-        #data_infos = data_infos[::self.load_interval]
-        self.metadata = data['metadata']
-        self.version = self.metadata['version']
+        data = mmcv.load(ann_file, file_format="pkl")
+        data_infos_ori = data_infos = list(
+            sorted(data["infos"], key=lambda e: e["token"])
+        )
+        # data_infos = data_infos[::self.load_interval]
+        self.metadata = data["metadata"]
+        self.version = self.metadata["version"]
 
         if self.load_separate:
             data_infos_path = []
-            out_dir = self.ann_file.split('.')[0]
+            out_dir = self.ann_file.split(".")[0]
             for i in mmcv.track_iter_progress(range(len(data_infos_ori))):
-                out_file = osp.join(out_dir, '%07d.pkl' % i)
+                out_file = osp.join(out_dir, "%07d.pkl" % i)
                 data_infos_path.append(out_file)
                 if not osp.exists(out_file):
-                    mmcv.dump(data_infos_ori[i], out_file, file_format='pkl')
-            data_infos_path = data_infos_path[::self.load_interval]
+                    mmcv.dump(data_infos_ori[i], out_file, file_format="pkl")
+            data_infos_path = data_infos_path[:: self.load_interval]
             return data_infos_path
 
         return data_infos
-    
+
     def pre_pipeline(self, results):
-        results['img_fields'] = []
-        results['bbox3d_fields'] = []
-        results['bbox2d_fields'] = []
-        results['pts_mask_fields'] = []
-        results['pts_seg_fields'] = []
-        results['bbox_fields'] = []
-        results['mask_fields'] = []
-        results['seg_fields'] = []
-        results['box_type_3d'] = self.box_type_3d
-        results['box_mode_3d'] = self.box_mode_3d
+        results["img_fields"] = []
+        results["bbox3d_fields"] = []
+        results["bbox2d_fields"] = []
+        results["pts_mask_fields"] = []
+        results["pts_seg_fields"] = []
+        results["bbox_fields"] = []
+        results["mask_fields"] = []
+        results["seg_fields"] = []
+        results["box_type_3d"] = self.box_type_3d
+        results["box_mode_3d"] = self.box_mode_3d
 
     def load_annotations_2d(self, ann_file):
         self.coco = COCO(ann_file)
@@ -124,15 +138,16 @@ class CustomLIDCDataset(Custom3DDataset):
         total_ann_ids = []
         for i in self.coco.get_img_ids():
             info = self.coco.load_imgs([i])[0]
-            info['filename'] = info['file_name']
-            self.impath_to_imgid['./data/lidc/' + info['file_name']] = i
-            #self.impath_to_imgid[info['file_name']] = i
+            info["filename"] = info["file_name"]
+            self.impath_to_imgid["./data/lidc/Images/" + info["file_name"]] = i
+            # self.impath_to_imgid[info['file_name']] = i
             self.imgid_to_dataid[i] = len(data_infos)
             data_infos.append(info)
             ann_ids = self.coco.get_ann_ids(img_ids=[i])
             total_ann_ids.extend(ann_ids)
         assert len(set(total_ann_ids)) == len(
-            total_ann_ids), f"Annotation ids in '{ann_file}' are not unique!"
+            total_ann_ids
+        ), f"Annotation ids in '{ann_file}' are not unique!"
         self.data_infos_2d = data_infos
 
     def impath_to_ann2d(self, impath):
@@ -162,16 +177,14 @@ class CustomLIDCDataset(Custom3DDataset):
         if not self.load_separate:
             info = self.data_infos[index]
         else:
-            info = mmcv.load(self.data_infos[index], file_format='pkl')
-
-        
+            info = mmcv.load(self.data_infos[index], file_format="pkl")
 
         # standard protocal modified from SECOND.Pytorch
         input_dict = dict(
-            sample_idx=info['token'],
-            #pts_filename=info['lidar_path'],
-            #sweeps=info['sweeps'],
-            #timestamp=info['timestamp'] / 1e6,
+            sample_idx=info["token"],
+            # pts_filename=info['lidar_path'],
+            # sweeps=info['sweeps'],
+            # timestamp=info['timestamp'] / 1e6,
         )
 
         image_paths = []
@@ -190,38 +203,40 @@ class CustomLIDCDataset(Custom3DDataset):
             theta = i * angle_step
             R, t = compute_extrinsics(theta, radius)
             extrinsics_local.append((R, t))
-            
+
         # Display the extrinsics
-        #extrinsics
+        # extrinsics
 
         # Compute homogeneous extrinsic matrices for all cameras
-        homogeneous_extrinsics = [extrinsic_to_homogeneous(R, t) for R, t in extrinsics_local]
-        extrinsics = homogeneous_extrinsics #add homogeous extrinsic values
+        homogeneous_extrinsics = [
+            extrinsic_to_homogeneous(R, t) for R, t in extrinsics_local
+        ]
+        extrinsics = homogeneous_extrinsics  # add homogeous extrinsic values
         ###################################################################################
         img_timestamp = []
-        for cam_type, cam_info in info['cams'].items():
-            cam_idx = int(cam_type.split('_')[-1])#added index for cameras
-            img_timestamp.append(cam_info['timestamp'] / 1e6)
-            image_paths.append(cam_info['data_path'])
+        for cam_type, cam_info in info["cams"].items():
+            cam_idx = int(cam_type.split("_")[-1])  # added index for cameras
+            img_timestamp.append(cam_info["timestamp"] / 1e6)
+            image_paths.append(cam_info["data_path"])
             # obtain lidar to image transformation matrix
-            #lidar2cam_r = np.linalg.inv(cam_info['sensor2lidar_rotation'])
-            #lidar2cam_t = cam_info[
+            # lidar2cam_r = np.linalg.inv(cam_info['sensor2lidar_rotation'])
+            # lidar2cam_t = cam_info[
             #                  'sensor2lidar_translation'] @ lidar2cam_r.T
-            #lidar2cam_rt = np.eye(4)
-            #lidar2cam_rt[:3, :3] = lidar2cam_r.T
-            #lidar2cam_rt[3, :3] = -lidar2cam_t
+            # lidar2cam_rt = np.eye(4)
+            # lidar2cam_rt[:3, :3] = lidar2cam_r.T
+            # lidar2cam_rt[3, :3] = -lidar2cam_t
             lidar2cam_rt = extrinsics[cam_idx]
-            intrinsic = cam_info['cam_intrinsic']
+            intrinsic = cam_info["cam_intrinsic"]
             viewpad = np.eye(4)
-            viewpad[:intrinsic.shape[0], :intrinsic.shape[1]] = intrinsic
-            lidar2img_rt = (viewpad @ lidar2cam_rt.T)
+            viewpad[: intrinsic.shape[0], : intrinsic.shape[1]] = intrinsic
+            lidar2img_rt = viewpad @ lidar2cam_rt.T
             intrinsics.append(viewpad)
-            #extrinsics.append(
+            # extrinsics.append(
             #    lidar2cam_rt)  ###The extrinsics mean the tranformation from lidar to camera. If anyone want to use the extrinsics as sensor to lidar, please use np.linalg.inv(lidar2cam_rt.T) and modify the ResizeCropFlipImage and LoadMultiViewImageFromMultiSweepsFiles.
             lidar2img_rts.append(lidar2img_rt)
-            #extrinsics.append(np.eye(4))
+            # extrinsics.append(np.eye(4))
 
-        #let Extrinsics be lidar2img
+        # let Extrinsics be lidar2img
 
         input_dict.update(
             dict(
@@ -229,16 +244,17 @@ class CustomLIDCDataset(Custom3DDataset):
                 img_filename=image_paths,
                 lidar2img=lidar2img_rts,
                 intrinsics=intrinsics,
-                extrinsics=extrinsics
-            ))
+                extrinsics=extrinsics,
+            )
+        )
 
-        input_dict['img_info'] = info
+        input_dict["img_info"] = info
         if not self.test_mode:
             annos = self.get_ann_info(index)
-            input_dict['ann_info'] = annos
+            input_dict["ann_info"] = annos
 
-            gt_bboxes_3d = annos['gt_bboxes_3d']  # 3d boxes from data_info (tensor)
-            gt_labels_3d = annos['gt_labels_3d']
+            gt_bboxes_3d = annos["gt_bboxes_3d"]  # 3d boxes from data_info (tensor)
+            gt_labels_3d = annos["gt_labels_3d"]
             gt_bboxes_2d = []  # per-view 2d bboxes
             gt_bboxes_ignore = []  # per-view 2d bboxes
             gt_bboxes_2d_to_3d = []  # mapping from per-view 2d bboxes to 3d bboxes
@@ -246,22 +262,22 @@ class CustomLIDCDataset(Custom3DDataset):
 
             for cam_i in range(len(image_paths)):
                 ann_2d = self.impath_to_ann2d(image_paths[cam_i])
-                labels_2d = ann_2d['labels']
-                bboxes_2d = ann_2d['bboxes_2d']
-                
-                #debug remove last entry here
+                labels_2d = ann_2d["labels"]
+                bboxes_2d = ann_2d["bboxes_2d"]
+
+                # debug remove last entry here
                 bboxes_2d = bboxes_2d[:-1]
                 labels_2d = labels_2d[:-1]
 
-                bboxes_ignore = ann_2d['gt_bboxes_ignore']
-                bboxes_cam = ann_2d['bboxes_cam'] # 3d boxes from 2d annotation
-                #lidar2cam = extrinsics[cam_i]
+                bboxes_ignore = ann_2d["gt_bboxes_ignore"]
+                bboxes_cam = ann_2d["bboxes_cam"]  # 3d boxes from 2d annotation
+                # lidar2cam = extrinsics[cam_i]
 
                 # centers_lidar = gt_bboxes_3d.gravity_center.numpy()
                 # centers_lidar_hom = np.concatenate([centers_lidar, np.ones((len(centers_lidar), 1))], axis=1)
                 # centers_cam = (centers_lidar_hom @ lidar2cam.T)[:, :3]
                 # match = self.center_match(bboxes_cam, centers_cam)
-                #print("Image path:", image_paths[cam_i])
+                # print("Image path:", image_paths[cam_i])
                 # print("BBOXES_CAM for {}:".format(info['token']), bboxes_cam)
                 # print("CENTERS_CAM for {}:".format(info['token']), centers_cam)
                 # print("MATCH for {}:".format(info['token']), match)
@@ -275,18 +291,16 @@ class CustomLIDCDataset(Custom3DDataset):
 
                 match = np.arange(len(bboxes_2d))
 
-
                 gt_bboxes_2d.append(bboxes_2d)
                 gt_bboxes_2d_to_3d.append(match)
                 gt_labels_2d.append(labels_2d)
                 gt_bboxes_ignore.append(bboxes_ignore)
 
-            annos['gt_bboxes_2d'] = gt_bboxes_2d
-            annos['gt_labels_2d'] = gt_labels_2d
-            annos['gt_bboxes_2d_to_3d'] = gt_bboxes_2d_to_3d
-            annos['gt_bboxes_ignore'] = gt_bboxes_ignore
+            annos["gt_bboxes_2d"] = gt_bboxes_2d
+            annos["gt_labels_2d"] = gt_labels_2d
+            annos["gt_bboxes_2d_to_3d"] = gt_bboxes_2d_to_3d
+            annos["gt_bboxes_ignore"] = gt_bboxes_ignore
         return input_dict
-    
 
     def get_ann_info(self, index):
         """Get annotation info according to the given index.
@@ -315,36 +329,40 @@ class CustomLIDCDataset(Custom3DDataset):
             theta = i * angle_step
             R, t = compute_extrinsics(theta, radius)
             extrinsics_local.append((R, t))
-            
+
         # Display the extrinsics
-        #extrinsics
+        # extrinsics
 
         # Compute homogeneous extrinsic matrices for all cameras
-        homogeneous_extrinsics = [extrinsic_to_homogeneous(R, t) for R, t in extrinsics_local]
+        homogeneous_extrinsics = [
+            extrinsic_to_homogeneous(R, t) for R, t in extrinsics_local
+        ]
         ###################################################################################
         if not self.load_separate:
             info = self.data_infos[index]
         else:
-            info = mmcv.load(self.data_infos[index], file_format='pkl')
+            info = mmcv.load(self.data_infos[index], file_format="pkl")
         # # filter out bbox containing no points
         # if self.use_valid_flag:
         #     mask = info['valid_flag']
         # else:
         #     mask = info['num_lidar_pts'] > 0
-        gt_bboxes_3d = info['gt_boxes']
-        #print("gt_bboxes_3d", gt_bboxes_3d)
+        gt_bboxes_3d = info["gt_boxes"]
+        # print("gt_bboxes_3d", gt_bboxes_3d)
         # Extract the first three coordinates of each bounding box
         gt_bboxes_3d_coords = np.array([bbox[:3] for bbox in gt_bboxes_3d])
 
         # Convert to camera coordinates
-        gt_bboxes_3d_coords_cam = world_to_camera_frame(gt_bboxes_3d_coords, homogeneous_extrinsics[:1])
+        gt_bboxes_3d_coords_cam = world_to_camera_frame(
+            gt_bboxes_3d_coords, homogeneous_extrinsics[:1]
+        )
 
         # Update the original bounding boxes with the transformed coordinates
         for i in range(len(gt_bboxes_3d)):
             gt_bboxes_3d[i][:3] = gt_bboxes_3d_coords_cam[i][0]
-        #print("CAM_gt_bboxes_3d", gt_bboxes_3d)
+        # print("CAM_gt_bboxes_3d", gt_bboxes_3d)
 
-        gt_names_3d = info['gt_names']
+        gt_names_3d = info["gt_names"]
         gt_labels_3d = []
         for cat in gt_names_3d:
             if cat in self.CLASSES:
@@ -362,16 +380,13 @@ class CustomLIDCDataset(Custom3DDataset):
         # the lidc box center is [0.0, 0.0, 0.0], we change it to be
         # the same as KITTI (0.5, 0.5, 0)
         gt_bboxes_3d = CameraInstance3DBoxes(
-            gt_bboxes_3d,
-            box_dim=gt_bboxes_3d.shape[-1],
-            origin=(0.0, 0.0, 0.0)).convert_to(self.box_mode_3d)
+            gt_bboxes_3d, box_dim=gt_bboxes_3d.shape[-1], origin=(0.0, 0.0, 0.0)
+        ).convert_to(self.box_mode_3d)
 
         anns_results = dict(
-            gt_bboxes_3d=gt_bboxes_3d,
-            gt_labels_3d=gt_labels_3d,
-            gt_names=gt_names_3d)
+            gt_bboxes_3d=gt_bboxes_3d, gt_labels_3d=gt_labels_3d, gt_names=gt_names_3d
+        )
         return anns_results
-    
 
     def get_ann_info_2d(self, img_info_2d, ann_info_2d):
         """Parse bbox annotation.
@@ -396,43 +411,47 @@ class CustomLIDCDataset(Custom3DDataset):
             theta = i * angle_step
             R, t = compute_extrinsics(theta, radius)
             extrinsics.append((R, t))
-            
+
         # Compute homogeneous extrinsic matrices for all cameras
         homogeneous_extrinsics = [extrinsic_to_homogeneous(R, t) for R, t in extrinsics]
         ###################################################################################
-        
+
         gt_bboxes = []
         gt_labels = []
         gt_bboxes_ignore = []
         gt_bboxes_cam3d = []
         for i, ann in enumerate(ann_info_2d):
-            if ann.get('ignore', False):
+            if ann.get("ignore", False):
                 continue
-            x1, y1, w, h = ann['bbox']
-            inter_w = max(0, min(x1 + w, img_info_2d['width']) - max(x1, 0))
-            inter_h = max(0, min(y1 + h, img_info_2d['height']) - max(y1, 0))
+            x1, y1, w, h = ann["bbox"]
+            inter_w = max(0, min(x1 + w, img_info_2d["width"]) - max(x1, 0))
+            inter_h = max(0, min(y1 + h, img_info_2d["height"]) - max(y1, 0))
             if inter_w * inter_h == 0:
                 continue
-            if ann['area'] <= 0 or w < 1 or h < 1:
+            if ann["area"] <= 0 or w < 1 or h < 1:
                 continue
-            if ann['category_id'] not in self.cat_ids:
+            if ann["category_id"] not in self.cat_ids:
                 continue
             bbox = [x1, y1, x1 + w, y1 + h]
-            if ann.get('iscrowd', False):
+            if ann.get("iscrowd", False):
                 gt_bboxes_ignore.append(bbox)
             else:
-               gt_bboxes.append(bbox)
-               gt_labels.append(self.cat2label[ann['category_id']])
-               bbox_cam3d = np.array(ann['bbox_cam3d']).reshape(1, -1)
-               #print("bbox_cam3d_world", bbox_cam3d[0][:3])
-               #convert to camera instance 3d boxes
-               bbox_cam3d[0][:3] = np.array(world_to_camera_frame(np.array([bbox_cam3d[0][:3]]), homogeneous_extrinsics[:1])[0])
-               #print("CAM_bbox_cam3d", bbox_cam3d)
-               bbox_cam3d = np.concatenate([bbox_cam3d], axis=-1)
-               gt_bboxes_cam3d.append(bbox_cam3d.squeeze())
+                gt_bboxes.append(bbox)
+                gt_labels.append(self.cat2label[ann["category_id"]])
+                bbox_cam3d = np.array(ann["bbox_cam3d"]).reshape(1, -1)
+                # print("bbox_cam3d_world", bbox_cam3d[0][:3])
+                # convert to camera instance 3d boxes
+                bbox_cam3d[0][:3] = np.array(
+                    world_to_camera_frame(
+                        np.array([bbox_cam3d[0][:3]]), homogeneous_extrinsics[:1]
+                    )[0]
+                )
+                # print("CAM_bbox_cam3d", bbox_cam3d)
+                bbox_cam3d = np.concatenate([bbox_cam3d], axis=-1)
+                gt_bboxes_cam3d.append(bbox_cam3d.squeeze())
 
         gt_bboxes.append(bbox)
-        gt_labels.append(self.cat2label[ann['category_id']])
+        gt_labels.append(self.cat2label[ann["category_id"]])
 
         if gt_bboxes:
             gt_bboxes = np.array(gt_bboxes, dtype=np.float32)
@@ -447,7 +466,7 @@ class CustomLIDCDataset(Custom3DDataset):
             gt_bboxes_cam3d = np.zeros((0, 6), dtype=np.float32)
 
         if gt_bboxes_ignore:
-           gt_bboxes_ignore = np.array(gt_bboxes_ignore, dtype=np.float32)
+            gt_bboxes_ignore = np.array(gt_bboxes_ignore, dtype=np.float32)
         else:
             gt_bboxes_ignore = np.zeros((0, 4), dtype=np.float32)
 
@@ -455,15 +474,17 @@ class CustomLIDCDataset(Custom3DDataset):
             bboxes_cam=gt_bboxes_cam3d,
             bboxes_2d=gt_bboxes,
             gt_bboxes_ignore=gt_bboxes_ignore,
-            labels=gt_labels, )
+            labels=gt_labels,
+        )
         return ann
-    
-    def _evaluate_single(self,
-                         result_path,
-                         logger=None,
-                         metric='bbox',
-                         result_name='pts_bbox',
-                         ):
+
+    def _evaluate_single(
+        self,
+        result_path,
+        logger=None,
+        metric="bbox",
+        result_name="pts_bbox",
+    ):
         """Evaluation for a single model in nuScenes protocol.
 
         Args:
@@ -479,7 +500,7 @@ class CustomLIDCDataset(Custom3DDataset):
             dict: Dictionary of evaluation details.
         """
         # Instantiate your dataset class
-        dataset = CustomLIDCDataset(data_root='../data/lidc', test_mode=False)
+        dataset = CustomLIDCDataset(data_root="../data/lidc", test_mode=False)
 
         # Get data info for a sample index
         data_info = dataset.get_data_info(0)
@@ -495,15 +516,16 @@ class CustomLIDCDataset(Custom3DDataset):
 
         return NotImplementedError
 
-    def evaluate(self,
-                 results,
-                 metric='bbox',
-                 logger=None,
-                 jsonfile_prefix=None,
-                 result_names=['pts_bbox'],
-                 show=False,
-                 out_dir=None,
-                 pipeline=None,):
-
+    def evaluate(
+        self,
+        results,
+        metric="bbox",
+        logger=None,
+        jsonfile_prefix=None,
+        result_names=["pts_bbox"],
+        show=False,
+        out_dir=None,
+        pipeline=None,
+    ):
 
         return NotImplementedError
