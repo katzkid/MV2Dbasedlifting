@@ -1,13 +1,13 @@
 lidc_infos_train_2d_anno.coco
 ├── annotations (list of items, only show infos for items[0])
-│   ├── file_name: Patient0000/Image_00.png
+│   ├── file_name: Images/Patient0000/Image_00.png
 │   ├── image_id: 0000cam00
 │   ├── area: 3780.0
 │   ├── category_name: nodule
 │   ├── category_id: 1
 │   ├── bbox: [369.0, 567.0, 54.0, 70.0]
 │   ├── iscrowd: 0
-│   ├── bbox_cam3d: [34.453125, 59.0625, 28.828125, 48.75, 28.125, 17.5, 0.0]
+│   ├── bbox_cam3d: [59.0625, 28.828125, 48.75, 34.453125, 28.125, 17.5, 0.0]
 │   ├── center2d: [0, 0, 0]
 │   ├── id: 0
 │   ├── subtlety: 5
@@ -20,16 +20,16 @@ lidc_infos_train_2d_anno.coco
 │   ├── texture: 5
 │   └── malignancy: 5
 ├── images (list of items, only show infos for items[0])
-│   ├── file_name: Patient0000/Image_00.png
+│   ├── file_name: Images/Patient0000/Image_00.png
 │   ├── id: 0000cam00
 │   ├── cam_intrinsic
-│   │   ├── data_path: ./data/lidc/Images/Patient0000/Image_00.png
+│   │   ├── data_path: ata/lidc/Images/Patient0000/Image_00.png
 │   │   ├── type: CAM_00
 │   │   ├── sample_data_token: 000cam00
-│   │   ├── timestamp: 1735686000000000
+│   │   ├── timestamp: 0
 │   │   └── cam_intrinsic: [[600.0, 0.0, -400.390625], [0.0, 600.0, -400.390625], [0.0, 0.0, 1.0]]
 │   ├── width: 1024
 │   └── height: 1024
 └── categories (list of items, only show infos for items[0])
     ├── id: 0
-    └── name: normal
+    └── name: nodule
