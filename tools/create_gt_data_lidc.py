@@ -31,7 +31,7 @@ def get_cam_data(root_dir, images_dir, patient_id):
     """
 
     images_dir = f"{root_dir}/{images_dir}/Patient{patient_id:04}"
-    images_dir = images_dir[1:]  # test
+    # images_dir = images_dir[1:]  # test
 
     info = dict()
 
