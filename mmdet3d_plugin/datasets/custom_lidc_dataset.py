@@ -41,7 +41,9 @@ class CustomLIDCDataset(Custom3DDataset):
     """
 
     # replace with all the classes in customized pkl info file
-    CLASSES = "nodule"
+    CLASSES = [
+        "nodule",
+    ]
 
     def __init__(
         self,

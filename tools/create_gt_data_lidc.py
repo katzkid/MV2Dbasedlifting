@@ -207,7 +207,7 @@ def train_test_split(data_infos, metadata, train_split=0.8):
 # %%
 
 # Arguments
-root_path = "data/lidc"
+root_path = "./data/lidc"
 # Root directory to start walking
 # since we're in sandbox folder.
 # root_dir = f"../{root_path}"
