@@ -17,3 +17,7 @@ test.log
 .idea/
 .vscode/
 sandbox-browse-dataset/
+
+
+# exclude conda env
+mv2denv/
