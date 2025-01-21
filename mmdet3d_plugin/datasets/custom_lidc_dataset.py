@@ -139,7 +139,7 @@ class CustomLIDCDataset(Custom3DDataset):
         for i in self.coco.get_img_ids():
             info = self.coco.load_imgs([i])[0]
             info["filename"] = info["file_name"]
-            self.impath_to_imgid["./data/lidc/Images/" + info["file_name"]] = i
+            self.impath_to_imgid["./data/lidc/" + info["file_name"]] = i
             # self.impath_to_imgid[info['file_name']] = i
             self.imgid_to_dataid[i] = len(data_infos)
             data_infos.append(info)

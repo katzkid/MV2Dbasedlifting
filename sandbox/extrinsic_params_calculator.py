@@ -1,18 +1,17 @@
 import numpy as np
 
+
 # Function to compute the rotation matrix and translation vector
 def compute_extrinsics(theta_deg, r):
     theta_rad = np.deg2rad(theta_deg)
-    R = np.array([
-        [np.cos(theta_rad), 0, np.sin(theta_rad)],
-        [0, 1, 0],
-        [-np.sin(theta_rad), 0, np.cos(theta_rad)]
-    ])
-    t = np.array([
-        [r * np.cos(theta_rad)],
-        [0],
-        [r * np.sin(theta_rad)]
-    ])
+    R = np.array(
+        [
+            [np.cos(theta_rad), 0, np.sin(theta_rad)],
+            [0, 1, 0],
+            [-np.sin(theta_rad), 0, np.cos(theta_rad)],
+        ]
+    )
+    t = np.array([[r * np.cos(theta_rad)], [0], [r * np.sin(theta_rad)]])
     return R, t
 
 
@@ -23,7 +22,8 @@ def extrinsic_to_homogeneous(R, t):
     homogeneous_matrix[:3, 3] = t.flatten()
     return homogeneous_matrix
 
-#covert world coordinate to camera coordinate
+
+# covert world coordinate to camera coordinate
 def world_to_camera_frame(P_batch, extrinsics):
     # For each point in the batch, apply the transformation
     transformed_batch = []
@@ -35,9 +35,10 @@ def world_to_camera_frame(P_batch, extrinsics):
             # Apply transformation and extract the first 3 components
             transformed_points.append(np.dot(extrinsic, P_homogeneous)[:3])
         transformed_batch.append(transformed_points)
-    
+
     return transformed_batch
 
-#convert camera coordinate to world coordinate
+
+# convert camera coordinate to world coordinate
 def camera_to_world_frame(P, extrinsics):
     return [np.dot(np.linalg.inv(extrinsic), P) for extrinsic in extrinsics]
