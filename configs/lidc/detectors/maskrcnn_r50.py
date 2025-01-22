@@ -11,12 +11,23 @@ model = dict(
             norm_cfg=dict(type='BN', requires_grad=False),
             norm_eval=True,
             style='pytorch',
-            init_cfg=dict(type='Pretrained', checkpoint='torchvision://resnet50')),
+            # Adjust downsampling in the first convolutional layer
+            deep_stem=True,  # Use a "deep stem" for stronger downsampling
+            stem_channels=64,  # Match the original ResNet stem
+            strides=(2, 2, 2, 2),  # Downsampling stride for each stage
+            dilations=(1, 1, 1, 1),
+            init_cfg=dict(type='Pretrained', checkpoint='torchvision://resnet50'),
+        ),
         neck=dict(
             type='FPN',
-            in_channels=[256, 512, 1024, 2048],
+            in_channels=[256, 512, 1024, 2048],  # Input channels from backbone stages
             out_channels=256,
-            num_outs=5),
+            num_outs=5,  # Generate 5 output feature maps
+            start_level=0,  # Start from the first backbone output
+            end_level=3,  # End at the last backbone output
+            # Add extra downsampling for the 5th feature map (8x8)
+            add_extra_convs='on_output',
+        ),
         rpn_head=dict(
             type='RPNHead',
             in_channels=256,
@@ -25,7 +36,7 @@ model = dict(
                 type='AnchorGenerator',
                 scales=[8],
                 ratios=[0.5, 1.0, 2.0],
-                strides=[4, 8, 16, 32, 64]),
+                strides=[4, 8, 16, 32, 64]),  # Match FPN output strides
             bbox_coder=dict(
                 type='DeltaXYWHBBoxCoder',
                 target_means=[.0, .0, .0, .0],
@@ -39,13 +50,12 @@ model = dict(
                 type='SingleRoIExtractor',
                 roi_layer=dict(type='RoIAlign', output_size=7, sampling_ratio=0),
                 out_channels=256,
-                featmap_strides=[4, 8, 16, 32]),
+                featmap_strides=[4, 8, 16, 32, 64]),  # Match FPN outputs
             bbox_head=dict(
                 type='Shared2FCBBoxHead',
                 in_channels=256,
                 fc_out_channels=1024,
                 roi_feat_size=7,
-                #num_classes=10,
                 num_classes=1,
                 bbox_coder=dict(
                     type='DeltaXYWHBBoxCoder',

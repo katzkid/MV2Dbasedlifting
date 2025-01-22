@@ -86,23 +86,45 @@ class TwoStageDetBase(TwoStageDetector):
         assert self.with_bbox, 'Bbox head must be implemented.'
         x = feat
         if proposals is None:
-            #proposal_list = self.rpn_head.simple_test_rpn(x, img_metas)
-            # debug
-            #split into 2 lists
-            x1 = []
-            x2 = []
-            img_metas1 = []
-            img_metas2 = []
-            for tensor in x:
-                split_x = torch.split(tensor, 5, dim=0)
-                x1.append(split_x[0])
-                x2.append(split_x[1])
-                
-            img_metas1 = img_metas[:5]
-            img_metas2 = img_metas[5:]
-            proposal_list1 = self.rpn_head.simple_test_rpn(x1, img_metas1)
-            proposal_list2 = self.rpn_head.simple_test_rpn(x2, img_metas2)
-            proposal_list = proposal_list1 + proposal_list2
+            proposal_list = self.rpn_head.simple_test_rpn(x, img_metas)
+            # breakpoint()#debug
+            # # debug
+            # # Split into 4 parts
+            # x1 = []
+            # x2 = []
+            # x3 = []
+            # x4 = []
+            # img_metas1 = []
+            # img_metas2 = []
+            # img_metas3 = []
+            # img_metas4 = []
+
+            # # Calculate the split size
+            # split_size = len(img_metas) // 4  # Divide the data into 5 equal parts
+
+            # # Split the tensors in `x`
+            # for tensor in x:
+            #     split_x = torch.split(tensor, split_size, dim=0)
+            #     x1.append(split_x[0])
+            #     x2.append(split_x[1])
+            #     x3.append(split_x[2])
+            #     x4.append(split_x[3])
+
+            # # Split `img_metas`
+            # img_metas1 = img_metas[:split_size]
+            # img_metas2 = img_metas[split_size:2*split_size]
+            # img_metas3 = img_metas[2*split_size:3*split_size]
+            # img_metas4 = img_metas[3*split_size:]
+
+            # # Run the RPN head on each split
+            # proposal_list1 = self.rpn_head.simple_test_rpn(x1, img_metas1)
+            # proposal_list2 = self.rpn_head.simple_test_rpn(x2, img_metas2)
+            # proposal_list3 = self.rpn_head.simple_test_rpn(x3, img_metas3)
+            # proposal_list4 = self.rpn_head.simple_test_rpn(x3, img_metas4)
+
+            # # Combine the results
+            # proposal_list = torch.cat((proposal_list1 ,proposal_list2 ,proposal_list3 ,proposal_list4), dim=0)
+            # breakpoint()#debug
 
         else:
             proposal_list = proposals
