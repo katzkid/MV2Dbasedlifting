@@ -1,6 +1,7 @@
 from mmdet.core import bbox2result
 from mmdet.models.builder import DETECTORS
 from mmdet.models.detectors import SingleStageDetector, TwoStageDetector
+import torch
 
 
 @DETECTORS.register_module()
@@ -85,7 +86,24 @@ class TwoStageDetBase(TwoStageDetector):
         assert self.with_bbox, 'Bbox head must be implemented.'
         x = feat
         if proposals is None:
-            proposal_list = self.rpn_head.simple_test_rpn(x, img_metas)
+            #proposal_list = self.rpn_head.simple_test_rpn(x, img_metas)
+            # debug
+            #split into 2 lists
+            x1 = []
+            x2 = []
+            img_metas1 = []
+            img_metas2 = []
+            for tensor in x:
+                split_x = torch.split(tensor, 5, dim=0)
+                x1.append(split_x[0])
+                x2.append(split_x[1])
+                
+            img_metas1 = img_metas[:5]
+            img_metas2 = img_metas[5:]
+            proposal_list1 = self.rpn_head.simple_test_rpn(x1, img_metas1)
+            proposal_list2 = self.rpn_head.simple_test_rpn(x2, img_metas2)
+            proposal_list = proposal_list1 + proposal_list2
+
         else:
             proposal_list = proposals
 
