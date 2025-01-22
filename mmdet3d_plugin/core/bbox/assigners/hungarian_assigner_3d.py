@@ -118,9 +118,10 @@ class HungarianAssigner3D(BaseAssigner):
         # 2. compute the weighted costs
         # classification and bboxcost.
         #added here for LIDC. Hopefully it will not hamper NuScenes
-        if gt_labels.dim() == 1:
-            gt_labels_unsqueeze = gt_labels.unsqueeze(-1)  # Shape becomes [M, 1]
-        cls_cost = self.cls_cost(cls_pred, gt_labels_unsqueeze)
+        #if gt_labels.dim() == 1:
+        #    gt_labels_unsqueeze = gt_labels.unsqueeze(-1)  # Shape becomes [M, 1]
+        #cls_cost = self.cls_cost(cls_pred, gt_labels_unsqueeze)
+        cls_cost = self.cls_cost(cls_pred, gt_labels)
         # regression L1 cost
         #breakpoint()#debug
         normalized_gt_bboxes = normalize_bbox(gt_bboxes, self.pc_range)
