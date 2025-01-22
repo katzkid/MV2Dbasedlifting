@@ -120,8 +120,8 @@ class PhotoMetricDistortionMultiViewImageXray:
                                               self.contrast_upper)
                     img *= alpha
 
-            
-            new_imgs.append(img)
+            img32 = img.astype(np.float32)
+            new_imgs.append(img32)
             scale_factors.append(1.0)
         results['img'] = new_imgs
         results['scale_factor'] = scale_factors

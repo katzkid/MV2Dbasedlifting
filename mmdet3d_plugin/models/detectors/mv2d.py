@@ -183,7 +183,7 @@ class MV2D(Base3DDetector):
             gt_bboxes_ignore.extend(ori_gt_bboxes_ignore[i])
 
         # calculate losses for 2D detector
-        img = img.to(torch.float32) #debug
+        #img = img.to(torch.float32) #debug
         detector_feat = self.extract_feat(img)
         losses_detector = self.base_detector.forward_train_w_feat(
             detector_feat,
@@ -197,10 +197,10 @@ class MV2D(Base3DDetector):
 
         # generate 2D detection
         self.base_detector.set_detection_cfg(self.train_cfg.get('detection_proposal'))
-        #breakpoint() #debug
+        breakpoint() #debug
         with torch.no_grad():
             results = self.base_detector.simple_test_w_feat(detector_feat, img_metas)
-        #breakpoint() #debug
+        breakpoint() #debug
         # process 2D detection
         detections = self.process_2d_detections(results, img.device)
         if self.train_cfg.get('complement_2d_gt', -1) > 0:
