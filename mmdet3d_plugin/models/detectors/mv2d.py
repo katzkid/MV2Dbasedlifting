@@ -183,7 +183,7 @@ class MV2D(Base3DDetector):
             gt_bboxes_ignore.extend(ori_gt_bboxes_ignore[i])
 
         # calculate losses for 2D detector
-        img = img.to(torch.float32) #debug
+        #img = img.to(torch.float32) #debug
         detector_feat = self.extract_feat(img)
         losses_detector = self.base_detector.forward_train_w_feat(
             detector_feat,
