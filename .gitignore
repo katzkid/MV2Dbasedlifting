@@ -21,3 +21,4 @@ sandbox-browse-dataset/
 
 # exclude conda env
 mv2denv/
+debug_var/
