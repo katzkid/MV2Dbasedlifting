@@ -226,7 +226,9 @@ class MV2D(Base3DDetector):
                     len(img), len(img_metas)))
 
         if num_augs == 1:
-            return self.simple_test(img[0], img_metas[0], **kwargs)
+            # return self.simple_test(img[0], img_metas[0], **kwargs)
+            # debug: we need to return full img in shape (B, N, C, H, W) to match assignment. 
+            return self.simple_test(img, img_metas, **kwargs)
         else:
             return self.aug_test(img, img_metas, **kwargs)
 

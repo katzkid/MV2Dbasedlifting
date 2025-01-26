@@ -1,3 +1,5 @@
+# LIDC
+
 conda env create -f MV2Denv.yml
 
 mkdir weights
@@ -12,6 +14,21 @@ mkdir nuscenes
 
 cd nuscenes
 cd ../../
+
+## Setup linux packages
+sudo apt update
+sudo apt install -y libgl1-mesa-glx
+
+## Sync important folders to S3
+mc mirror --watch ./work_dirs s3/kdang/safran/MV2Dbasedlifting/work_dirs
+
+## Test and inference 
+- Run bash script: 
+
+bash tools/dist_test.sh configs/lidc/model/mv2d_r50_frcnn_single_frame_roi_1024x1024_ep24_lidc.py work_dirs/mv2d_r50_frcnn_single_frame_roi_1024x1024_ep24_lidc/latest.pth 1 --eval bbox
+
+- Run python script
+python tools/test.py configs/lidc/model/mv2d_r50_frcnn_single_frame_roi_1024x1024_ep24_lidc.py work_dirs/mv2d_r50_frcnn_single_frame_roi_1024x1024_ep24_lidc/latest.pth 8 --eval bbox
 
 # MV2D
 # !wget https://www.nuscenes.org/data/v1.0-mini.tgz  # Download the nuScenes mini split.

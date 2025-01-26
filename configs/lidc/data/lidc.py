@@ -2,9 +2,7 @@ _base_ = [
     '../../_base_/schedules/mmdet_schedule_1x.py', '../../_base_/default_runtime.py'
 ]
 
-class_names = [
-    'normal', 'nodule'
-]
+class_names = ['nodule']  # update 25-01-2025. We need to check again trained model. It was train with class_name = ['normal', 'nodule']
 
 plugin_dir = 'mmdet3d_plugin/'
 dataset_type = 'CustomLIDCDataset'
@@ -56,22 +54,24 @@ train_pipeline = [
 test_pipeline = [
     dict(type='LoadMultiViewImageFromFiles', to_float32=True),
     dict(type='LoadAnnotationsMono3D', with_bbox_3d=False, with_label_3d=False, with_bbox_2d=False, with_attr_label=False),
-    dict(type='ResizeCropFlipImageMono', data_aug_conf=ida_aug_conf, with_bbox_2d=False, training=False),
-    dict(type='NormalizeMultiviewImage', **img_norm_cfg),
+    # dict(type='ResizeCropFlipImageMono', data_aug_conf=ida_aug_conf, with_bbox_2d=False, training=False),
+    # dict(type='NormalizeMultiviewImage', **img_norm_cfg),
     dict(type='PadMultiViewImage', size_divisor=32),
-    dict(
-        type='MultiScaleFlipAug3D',
-        img_scale=(1333, 800),
-        pts_scale_ratio=1,
-        flip=False,
-        transforms=[
-            dict(
-                type='DefaultFormatBundleMono3D',
-                class_names=class_names,
-                with_label=False),
-            dict(type='CollectMono3D', debug=False,
-                 keys=['img'])
-        ])
+    # dict(
+    #     type='MultiScaleFlipAug3D',
+    #     img_scale=(1333, 800),
+    #     pts_scale_ratio=1,
+    #     flip=False,
+    #     transforms=[
+    #         dict(
+    #             type='',
+    #             class_names=class_names,
+    #             with_label=False),
+    #         dict(type='CollectMono3D', debug=False,
+    #              keys=['img'])
+    #     ])
+    dict(type='DefaultFormatBundleMono3D', class_names=class_names, with_label=False),  # Follow train_pipeline, without label
+    dict(type='CollectMono3DLIDC', debug=False, keys=['img'])
 ]
 
 data = dict(
