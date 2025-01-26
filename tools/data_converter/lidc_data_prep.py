@@ -36,7 +36,7 @@ def get_cam_data(root_dir, images_dir, patient_id):
     """
 
     images_dir = f"{root_dir}/{images_dir}/Patient{patient_id:04}"
-    images_dir = images_dir[1:]  # test
+    # images_dir = images_dir[1:]  # test
 
     info = dict()
 
@@ -226,7 +226,7 @@ def get_annotation_files(anno_2d_path, patient_list):
 def main():
 
     # Arguments
-    root_path = "data/lidc"
+    root_path = "./data/lidc"
     # Root directory to start walking
     # since we're in sandbox folder.
     # root_dir = f"../{root_path}"
