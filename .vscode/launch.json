@@ -11,7 +11,7 @@
         "program": "${workspaceFolder}/tools/train.py",
         "console": "integratedTerminal",
         "args": [
-            "configs/lidc/model/mv2d_r50_frcnn_single_frame_roi_1024x1024_ep24_lidc.py"
+            "configs/lidc/model/mv2d_r50_frcnn_sample_debug.py"
         ],
         "justMyCode": false,
         "env": {
@@ -27,7 +27,7 @@
         // "python": "${workspaceFolder}/mv2denv/bin/python",
         "console": "integratedTerminal",
         "args": [
-            "configs/lidc/model/mv2d_r50_frcnn_single_frame_roi_1024x1024_ep24_lidc.py",
+            "configs/lidc/model/mv2d_r50_frcnn_sample_debug.py",
             "work_dirs/mv2d_r50_frcnn_single_frame_roi_1024x1024_ep24_lidc/latest.pth",
             "--eval",
             "bbox"

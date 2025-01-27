@@ -15,13 +15,17 @@ import numpy as np
 import pyquaternion
 from nuscenes.utils.data_classes import Box as NuScenesBox
 from nuscenes.eval.common.data_classes import EvalBoxes
+
 import mmcv
 from mmdet.datasets.api_wrappers import COCO
 from mmdet.datasets import DATASETS
 from mmdet3d.datasets import NuScenesMonoDataset, NuScenesDataset, Custom3DDataset
 import os
 import copy
-from mmdet3d.core.bbox import CameraInstance3DBoxes, LiDARInstance3DBoxes, get_box_type, Box3DMode
+from mmdet3d.core.bbox import CameraInstance3DBoxes, LiDARInstance3DBoxes, get_box_type, Box3DMode, Coord3DMode
+from mmdet3d.core import show_result
+
+
 from sandbox.extrinsic_params_calculator import compute_extrinsics, extrinsic_to_homogeneous, world_to_camera_frame #extrinsic params computation
 
 
@@ -49,7 +53,7 @@ class CustomLIDCDataset(Custom3DDataset):
             eval_version='detection_cvpr_2019',
             load_separate=False, 
             use_valid_flag=False):        
-         
+
         self.ann_file = ann_file
         self.ann_file_2d = ann_file_2d
         self.load_interval = load_interval
@@ -67,7 +71,7 @@ class CustomLIDCDataset(Custom3DDataset):
             box_type_3d=box_type_3d,
             filter_empty_gt=filter_empty_gt,
             test_mode=test_mode)
-        
+
         if self.modality is None:
             self.modality = dict(
                 use_camera=True,
@@ -81,11 +85,11 @@ class CustomLIDCDataset(Custom3DDataset):
 
     def __len__(self):
         return super(CustomLIDCDataset, self).__len__()
-    
+
     def load_annotations(self, ann_file):
         data = mmcv.load(ann_file, file_format='pkl')
         data_infos_ori = data_infos = list(sorted(data['infos'], key=lambda e: e['token']))
-        #data_infos = data_infos[::self.load_interval]
+        # data_infos = data_infos[::self.load_interval]
         self.metadata = data['metadata']
         self.version = self.metadata['version']
 
@@ -101,7 +105,7 @@ class CustomLIDCDataset(Custom3DDataset):
             return data_infos_path
 
         return data_infos
-    
+
     def pre_pipeline(self, results):
         results['img_fields'] = []
         results['bbox3d_fields'] = []
@@ -126,7 +130,7 @@ class CustomLIDCDataset(Custom3DDataset):
             info = self.coco.load_imgs([i])[0]
             info['filename'] = info['file_name']
             self.impath_to_imgid['./data/lidc/' + info['file_name']] = i
-            #self.impath_to_imgid[info['file_name']] = i
+            # self.impath_to_imgid[info['file_name']] = i
             self.imgid_to_dataid[i] = len(data_infos)
             data_infos.append(info)
             ann_ids = self.coco.get_ann_ids(img_ids=[i])
@@ -164,8 +168,6 @@ class CustomLIDCDataset(Custom3DDataset):
         else:
             info = mmcv.load(self.data_infos[index], file_format='pkl')
 
-        
-
         # standard protocal modified from SECOND.Pytorch
         input_dict = dict(
             sample_idx=info['token'],
@@ -190,9 +192,9 @@ class CustomLIDCDataset(Custom3DDataset):
             theta = i * angle_step
             R, t = compute_extrinsics(theta, radius)
             extrinsics_local.append((R, t))
-            
+
         # Display the extrinsics
-        #extrinsics
+        # extrinsics
 
         # Compute homogeneous extrinsic matrices for all cameras
         homogeneous_extrinsics = [extrinsic_to_homogeneous(R, t) for R, t in extrinsics_local]
@@ -204,24 +206,24 @@ class CustomLIDCDataset(Custom3DDataset):
             img_timestamp.append(cam_info['timestamp'] / 1e6)
             image_paths.append(cam_info['data_path'])
             # obtain lidar to image transformation matrix
-            #lidar2cam_r = np.linalg.inv(cam_info['sensor2lidar_rotation'])
-            #lidar2cam_t = cam_info[
+            # lidar2cam_r = np.linalg.inv(cam_info['sensor2lidar_rotation'])
+            # lidar2cam_t = cam_info[
             #                  'sensor2lidar_translation'] @ lidar2cam_r.T
-            #lidar2cam_rt = np.eye(4)
-            #lidar2cam_rt[:3, :3] = lidar2cam_r.T
-            #lidar2cam_rt[3, :3] = -lidar2cam_t
+            # lidar2cam_rt = np.eye(4)
+            # lidar2cam_rt[:3, :3] = lidar2cam_r.T
+            # lidar2cam_rt[3, :3] = -lidar2cam_t
             lidar2cam_rt = extrinsics[cam_idx]
             intrinsic = cam_info['cam_intrinsic']
             viewpad = np.eye(4)
             viewpad[:intrinsic.shape[0], :intrinsic.shape[1]] = intrinsic
             lidar2img_rt = (viewpad @ lidar2cam_rt.T)
             intrinsics.append(viewpad)
-            #extrinsics.append(
+            # extrinsics.append(
             #    lidar2cam_rt)  ###The extrinsics mean the tranformation from lidar to camera. If anyone want to use the extrinsics as sensor to lidar, please use np.linalg.inv(lidar2cam_rt.T) and modify the ResizeCropFlipImage and LoadMultiViewImageFromMultiSweepsFiles.
             lidar2img_rts.append(lidar2img_rt)
-            #extrinsics.append(np.eye(4))
+            # extrinsics.append(np.eye(4))
 
-        #let Extrinsics be lidar2img
+        # let Extrinsics be lidar2img
 
         input_dict.update(
             dict(
@@ -248,20 +250,20 @@ class CustomLIDCDataset(Custom3DDataset):
                 ann_2d = self.impath_to_ann2d(image_paths[cam_i])
                 labels_2d = ann_2d['labels']
                 bboxes_2d = ann_2d['bboxes_2d']
-                
-                #debug remove last entry here
+
+                # debug remove last entry here
                 bboxes_2d = bboxes_2d[:-1]
                 labels_2d = labels_2d[:-1]
 
                 bboxes_ignore = ann_2d['gt_bboxes_ignore']
                 bboxes_cam = ann_2d['bboxes_cam'] # 3d boxes from 2d annotation
-                #lidar2cam = extrinsics[cam_i]
+                # lidar2cam = extrinsics[cam_i]
 
                 # centers_lidar = gt_bboxes_3d.gravity_center.numpy()
                 # centers_lidar_hom = np.concatenate([centers_lidar, np.ones((len(centers_lidar), 1))], axis=1)
                 # centers_cam = (centers_lidar_hom @ lidar2cam.T)[:, :3]
                 # match = self.center_match(bboxes_cam, centers_cam)
-                #print("Image path:", image_paths[cam_i])
+                # print("Image path:", image_paths[cam_i])
                 # print("BBOXES_CAM for {}:".format(info['token']), bboxes_cam)
                 # print("CENTERS_CAM for {}:".format(info['token']), centers_cam)
                 # print("MATCH for {}:".format(info['token']), match)
@@ -275,7 +277,6 @@ class CustomLIDCDataset(Custom3DDataset):
 
                 match = np.arange(len(bboxes_2d))
 
-
                 gt_bboxes_2d.append(bboxes_2d)
                 gt_bboxes_2d_to_3d.append(match)
                 gt_labels_2d.append(labels_2d)
@@ -286,7 +287,6 @@ class CustomLIDCDataset(Custom3DDataset):
             annos['gt_bboxes_2d_to_3d'] = gt_bboxes_2d_to_3d
             annos['gt_bboxes_ignore'] = gt_bboxes_ignore
         return input_dict
-    
 
     def get_ann_info(self, index):
         """Get annotation info according to the given index.
@@ -315,9 +315,9 @@ class CustomLIDCDataset(Custom3DDataset):
             theta = i * angle_step
             R, t = compute_extrinsics(theta, radius)
             extrinsics_local.append((R, t))
-            
+
         # Display the extrinsics
-        #extrinsics
+        # extrinsics
 
         # Compute homogeneous extrinsic matrices for all cameras
         homogeneous_extrinsics = [extrinsic_to_homogeneous(R, t) for R, t in extrinsics_local]
@@ -332,7 +332,7 @@ class CustomLIDCDataset(Custom3DDataset):
         # else:
         #     mask = info['num_lidar_pts'] > 0
         gt_bboxes_3d = info['gt_boxes']
-        #print("gt_bboxes_3d", gt_bboxes_3d)
+        # print("gt_bboxes_3d", gt_bboxes_3d)
         # Extract the first three coordinates of each bounding box
         gt_bboxes_3d_coords = np.array([bbox[:3] for bbox in gt_bboxes_3d])
 
@@ -342,7 +342,7 @@ class CustomLIDCDataset(Custom3DDataset):
         # Update the original bounding boxes with the transformed coordinates
         for i in range(len(gt_bboxes_3d)):
             gt_bboxes_3d[i][:3] = gt_bboxes_3d_coords_cam[i][0]
-        #print("CAM_gt_bboxes_3d", gt_bboxes_3d)
+        # print("CAM_gt_bboxes_3d", gt_bboxes_3d)
 
         gt_names_3d = info['gt_names']
         gt_labels_3d = []
@@ -371,7 +371,6 @@ class CustomLIDCDataset(Custom3DDataset):
             gt_labels_3d=gt_labels_3d,
             gt_names=gt_names_3d)
         return anns_results
-    
 
     def get_ann_info_2d(self, img_info_2d, ann_info_2d):
         """Parse bbox annotation.
@@ -396,11 +395,11 @@ class CustomLIDCDataset(Custom3DDataset):
             theta = i * angle_step
             R, t = compute_extrinsics(theta, radius)
             extrinsics.append((R, t))
-            
+
         # Compute homogeneous extrinsic matrices for all cameras
         homogeneous_extrinsics = [extrinsic_to_homogeneous(R, t) for R, t in extrinsics]
         ###################################################################################
-        
+
         gt_bboxes = []
         gt_labels = []
         gt_bboxes_ignore = []
@@ -421,15 +420,15 @@ class CustomLIDCDataset(Custom3DDataset):
             if ann.get('iscrowd', False):
                 gt_bboxes_ignore.append(bbox)
             else:
-               gt_bboxes.append(bbox)
-               gt_labels.append(self.cat2label[ann['category_id']])
-               bbox_cam3d = np.array(ann['bbox_cam3d']).reshape(1, -1)
-               #print("bbox_cam3d_world", bbox_cam3d[0][:3])
-               #convert to camera instance 3d boxes
-               bbox_cam3d[0][:3] = np.array(world_to_camera_frame(np.array([bbox_cam3d[0][:3]]), homogeneous_extrinsics[:1])[0])
-               #print("CAM_bbox_cam3d", bbox_cam3d)
-               bbox_cam3d = np.concatenate([bbox_cam3d], axis=-1)
-               gt_bboxes_cam3d.append(bbox_cam3d.squeeze())
+                gt_bboxes.append(bbox)
+                gt_labels.append(self.cat2label[ann['category_id']])
+                bbox_cam3d = np.array(ann['bbox_cam3d']).reshape(1, -1)
+                # print("bbox_cam3d_world", bbox_cam3d[0][:3])
+                # convert to camera instance 3d boxes
+                bbox_cam3d[0][:3] = np.array(world_to_camera_frame(np.array([bbox_cam3d[0][:3]]), homogeneous_extrinsics[:1])[0])
+                # print("CAM_bbox_cam3d", bbox_cam3d)
+                bbox_cam3d = np.concatenate([bbox_cam3d], axis=-1)
+                gt_bboxes_cam3d.append(bbox_cam3d.squeeze())
 
         gt_bboxes.append(bbox)
         gt_labels.append(self.cat2label[ann['category_id']])
@@ -447,7 +446,7 @@ class CustomLIDCDataset(Custom3DDataset):
             gt_bboxes_cam3d = np.zeros((0, 6), dtype=np.float32)
 
         if gt_bboxes_ignore:
-           gt_bboxes_ignore = np.array(gt_bboxes_ignore, dtype=np.float32)
+            gt_bboxes_ignore = np.array(gt_bboxes_ignore, dtype=np.float32)
         else:
             gt_bboxes_ignore = np.zeros((0, 4), dtype=np.float32)
 
@@ -458,9 +457,82 @@ class CustomLIDCDataset(Custom3DDataset):
             labels=gt_labels, )
         return ann
 
+    #
+    #  Codes used for validation and inference.
+    #
 
+    def _format_bbox(self, results, jsonfile_prefix=None):
+        """Convert the results to the standard format.
 
-    # Codes used for validation and inference. 
+        Args:
+            results (list[dict]): Testing results of the dataset.
+            jsonfile_prefix (str): The prefix of the output jsonfile.
+                You can specify the output directory/filename by
+                modifying the jsonfile_prefix. Default: None.
+
+        Returns:
+            str: Path of the output json file.
+        """
+        nusc_annos = {}
+        mapped_class_names = self.CLASSES
+
+        print("Start to convert detection format...")
+        for sample_id, det in enumerate(mmcv.track_iter_progress(results)):
+            annos = []
+            boxes = output_to_nusc_box(det, self.with_velocity)
+            sample_token = self.data_infos[sample_id]["token"]
+            # boxes = lidar_nusc_box_to_global(
+            #     self.data_infos[sample_id],
+            #     boxes,
+            #     mapped_class_names,
+            #     self.eval_detection_configs,
+            #     self.eval_version,
+            # )
+            for i, box in enumerate(boxes):
+                name = mapped_class_names[box.label]
+                # if np.sqrt(box.velocity[0] ** 2 + box.velocity[1] ** 2) > 0.2:
+                #     if name in [
+                #         "car",
+                #         "construction_vehicle",
+                #         "bus",
+                #         "truck",
+                #         "trailer",
+                #     ]:
+                #         attr = "vehicle.moving"
+                #     elif name in ["bicycle", "motorcycle"]:
+                #         attr = "cycle.with_rider"
+                #     else:
+                #         attr = NuScenesDataset.DefaultAttribute[name]
+                # else:
+                #     if name in ["pedestrian"]:
+                #         attr = "pedestrian.standing"
+                #     elif name in ["bus"]:
+                #         attr = "vehicle.stopped"
+                #     else:
+                #         attr = NuScenesDataset.DefaultAttribute[name]
+
+                nusc_anno = dict(
+                    sample_token=sample_token,
+                    translation=box.center.tolist(),
+                    size=box.wlh.tolist(),
+                    rotation=box.orientation.elements.tolist(),
+                    velocity=box.velocity[:2].tolist(),
+                    detection_name=name,
+                    detection_score=box.score,
+                    attribute_name=None,
+                )
+                annos.append(nusc_anno)
+            nusc_annos[sample_token] = annos
+        nusc_submissions = {
+            "meta": self.modality,
+            "results": nusc_annos,
+        }
+
+        mmcv.mkdir_or_exist(jsonfile_prefix)
+        res_path = osp.join(jsonfile_prefix, "results_lidc.json")
+        print("Results writes to", res_path)
+        mmcv.dump(nusc_submissions, res_path)
+        return res_path
 
     def format_results(self, results, jsonfile_prefix=None):
         """Format the results to json (standard format for COCO evaluation).
@@ -508,8 +580,6 @@ class CustomLIDCDataset(Custom3DDataset):
                         {name: self._format_bbox(results_, tmp_file_)})
         return result_files, tmp_dir
 
-
-    
     def _evaluate_single(self,
                          result_path,
                          logger=None,
@@ -547,9 +617,6 @@ class CustomLIDCDataset(Custom3DDataset):
 
         return NotImplementedError
 
-
-
-
     def evaluate(self,
                  results,
                  metric='bbox',
@@ -578,3 +645,124 @@ class CustomLIDCDataset(Custom3DDataset):
             self.show(results, out_dir, show=show, pipeline=pipeline)
         return results_dict
 
+    def show(self, results, out_dir, show=False, pipeline=None):
+        """Results visualization.
+
+        Args:
+            results (list[dict]): List of bounding boxes results.
+            out_dir (str): Output directory of visualization result.
+            show (bool): Whether to visualize the results online.
+                Default: False.
+            pipeline (list[dict], optional): raw data loading for showing.
+                Default: None.
+        """
+        assert out_dir is not None, "Expect out_dir, got none."
+        pipeline = self._get_pipeline(pipeline)
+        for i, result in enumerate(results):
+            if "pts_bbox" in result.keys():
+                result = result["pts_bbox"]
+            data_info = self.data_infos[i]
+            pts_path = data_info["lidar_path"]
+            file_name = osp.split(pts_path)[-1].split(".")[0]
+            points = self._extract_data(i, pipeline, "points").numpy()
+            # for now we convert points into depth mode
+            points = Coord3DMode.convert_point(
+                points, Coord3DMode.LIDAR, Coord3DMode.DEPTH
+            )
+            inds = result["scores_3d"] > 0.1
+            gt_bboxes = self.get_ann_info(i)["gt_bboxes_3d"].tensor.numpy()
+            show_gt_bboxes = Box3DMode.convert(
+                gt_bboxes, Box3DMode.LIDAR, Box3DMode.DEPTH
+            )
+            pred_bboxes = result["boxes_3d"][inds].tensor.numpy()
+            show_pred_bboxes = Box3DMode.convert(
+                pred_bboxes, Box3DMode.LIDAR, Box3DMode.DEPTH
+            )
+            show_result(
+                points, show_gt_bboxes, show_pred_bboxes, out_dir, file_name, show
+            )
+
+
+
+
+def output_to_nusc_box(detection, with_velocity=True):
+    """Convert the output to the box class in the nuScenes.
+
+    Args:
+        detection (dict): Detection results.
+
+            - boxes_3d (:obj:`BaseInstance3DBoxes`): Detection bbox.
+            - scores_3d (torch.Tensor): Detection scores.
+            - labels_3d (torch.Tensor): Predicted box labels.
+
+    Returns:
+        list[:obj:`NuScenesBox`]: List of standard NuScenesBoxes.
+    """
+    box3d = detection["boxes_3d"]
+    scores = detection["scores_3d"].numpy()
+    labels = detection["labels_3d"].numpy()
+
+    box_gravity_center = box3d.gravity_center.numpy()
+    box_dims = box3d.dims.numpy()
+    box_yaw = box3d.yaw.numpy()
+
+    # # our LiDAR coordinate system -> nuScenes box coordinate system
+    # nus_box_dims = box_dims[:, [1, 0, 2]]
+
+    box_list = []
+    for i in range(len(box3d)):
+        quat = pyquaternion.Quaternion(axis=[0, 0, 1], radians=box_yaw[i])
+        if with_velocity:
+            velocity = (*box3d.tensor[i, 7:9], 0.0)
+        else:
+            velocity = (0, 0, 0)
+        # velo_val = np.linalg.norm(box3d[i, 7:9])
+        # velo_ori = box3d[i, 6]
+        # velocity = (
+        # velo_val * np.cos(velo_ori), velo_val * np.sin(velo_ori), 0.0)
+        box = NuScenesBox(
+            box_gravity_center[i],
+            box_dims[i],
+            # nus_box_dims[i],
+            quat,
+            label=labels[i],
+            score=scores[i],
+            velocity=velocity,
+        )
+        box_list.append(box)
+    return box_list
+
+def lidar_nusc_box_to_global(
+    info, boxes, classes, eval_configs, eval_version="detection_cvpr_2019"
+):
+    """Convert the box from ego to global coordinate.
+
+    Args:
+        info (dict): Info for a specific sample data, including the
+            calibration information.
+        boxes (list[:obj:`NuScenesBox`]): List of predicted NuScenesBoxes.
+        classes (list[str]): Mapped classes in the evaluation.
+        eval_configs (object): Evaluation configuration object.
+        eval_version (str, optional): Evaluation version.
+            Default: 'detection_cvpr_2019'
+
+    Returns:
+        list: List of standard NuScenesBoxes in the global
+            coordinate.
+    """
+    box_list = []
+    for box in boxes:
+        # Move box to ego vehicle coord system
+        box.rotate(pyquaternion.Quaternion(info["lidar2ego_rotation"]))
+        box.translate(np.array(info["lidar2ego_translation"]))
+        # filter det in ego.
+        cls_range_map = eval_configs.class_range
+        radius = np.linalg.norm(box.center[:2], 2)
+        det_range = cls_range_map[classes[box.label]]
+        if radius > det_range:
+            continue
+        # Move box to global coord system
+        box.rotate(pyquaternion.Quaternion(info["ego2global_rotation"]))
+        box.translate(np.array(info["ego2global_translation"]))
+        box_list.append(box)
+    return box_list

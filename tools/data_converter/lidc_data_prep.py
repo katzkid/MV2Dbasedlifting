@@ -252,6 +252,7 @@ def main():
     info_val_2d_anno_path = osp.join(out_dir, f"{info_prefix}_infos_val_2d_anno.coco.json")
     error_log_path = osp.join(out_dir, f"{info_prefix}_error_logs.txt")
 
+
     ###################################
     # Build 3D ground truth for train and val. Save in pickle files.
     # follow nuScence dataset.
@@ -333,6 +334,7 @@ def main():
         for key, value in logs.items():
             f.write(f"{key}, {value}\n")
         print(f"Write error log info into {error_log_path}")
+
 
     ###################################
     # Generate `infos_train_2d_anno` for 2D Annotation file with COCO `.json` format

@@ -26,6 +26,7 @@ eval_result/
 
 # Ignore everything inside the data folder
 /data/
+/data
 
 # # Allow specific files in the data/lidc folder
 # !/data/lidc/lidc_infos_train.pkl
