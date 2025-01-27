@@ -22,7 +22,7 @@ sandbox-browse-dataset/
 # exclude conda env
 mv2denv/
 debug_var/
-eval_result/
+# eval_result/
 
 # Ignore everything inside the data folder
 /data/
