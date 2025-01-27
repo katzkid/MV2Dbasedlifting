@@ -1,5 +1,5 @@
 _base_ = [
-    '../data/lidc.py', '../detectors/maskrcnn_r50.py'
+    '../data/lidc_toy_sample.py', '../detectors/maskrcnn_r50.py'
 ]
 
 point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
@@ -185,7 +185,7 @@ lr_config = dict(
     warmup_ratio=1.0 / 3,
     min_lr_ratio=1e-3,
 )
-total_epochs = 24
+total_epochs = 1
 runner = dict(type='EpochBasedRunner', max_epochs=total_epochs)
 # Temporary turn off evaluation hook
 evaluation = dict(interval=100, )

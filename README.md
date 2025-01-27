@@ -20,15 +20,31 @@ sudo apt update
 sudo apt install -y libgl1-mesa-glx
 
 ## Sync important folders to S3
-mc mirror --watch ./work_dirs s3/kdang/safran/MV2Dbasedlifting/work_dirs
+MinIO documentation: [client API](https://min.io/docs/minio/linux/reference/minio-mc/mc-mirror.html)
+Add `--watch` flag to enter monitoring mode. 
+
+mc mirror --overwrite ./work_dirs s3/kdang/safran/MV2Dbasedlifting/work_dirs
+mc mirror --overwrite ./data s3/kdang/safran/MV2Dbasedlifting/data
+mc mirror --overwrite ./weights s3/kdang/safran/MV2Dbasedlifting/weights
+
+
+
+
+## Train script
+bash tools/dist_train.sh configs/lidc/model/mv2d_r50_frcnn_single_frame_roi_1024x1024_ep24_lidc.py 1
 
 ## Test and inference 
 - Run bash script: 
 
-bash tools/dist_test.sh configs/lidc/model/mv2d_r50_frcnn_single_frame_roi_1024x1024_ep24_lidc.py work_dirs/mv2d_r50_frcnn_single_frame_roi_1024x1024_ep24_lidc/latest.pth 1 --eval bbox
+Add `--show` or `--show_dir eval_result/vis` to generate result visualization. 
+
+bash tools/dist_test.sh configs/lidc/model/mv2d_r50_frcnn_single_frame_roi_1024x1024_ep24_lidc.py work_dirs/mv2d_r50_frcnn_single_frame_roi_1024x1024_ep24_lidc/latest.pth 1 --eval bbox --out eval_result/output250127.pkl 
 
 - Run python script
-python tools/test.py configs/lidc/model/mv2d_r50_frcnn_single_frame_roi_1024x1024_ep24_lidc.py work_dirs/mv2d_r50_frcnn_single_frame_roi_1024x1024_ep24_lidc/latest.pth 8 --eval bbox
+python tools/test.py configs/lidc/model/mv2d_r50_frcnn_single_frame_roi_1024x1024_ep24_lidc.py work_dirs/mv2d_r50_frcnn_single_frame_roi_1024x1024_ep24_lidc/latest.pth 1 --eval bbox --out eval_result/output250126.pkl 
+
+
+
 
 # MV2D
 # !wget https://www.nuscenes.org/data/v1.0-mini.tgz  # Download the nuScenes mini split.
@@ -81,7 +97,7 @@ cd MV2D
 ```
 You can train the model following:
 ```bash
-bash tools/dist_train.sh configs/mv2d/exp/mv2d_r50_frcnn_two_frames_1408x512_ep24.py 8 
+bash tools/dist_train.sh configs/mv2d/exp/mv2d_r50_frcnn_two_frames_1408x512_ep24.py 1 
 ```
 You can evaluate the model following:
 ```bash

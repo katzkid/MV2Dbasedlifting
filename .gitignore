@@ -2,9 +2,9 @@
 .*     # Ignore all hidden files
 !.gitignore
 
-/data
 /weights
 /work_dirs
+work_dirs*
 __pycache__/
 /tools/__pycache__
 /tools/data_converter/__pycache__
@@ -22,4 +22,13 @@ sandbox-browse-dataset/
 # exclude conda env
 mv2denv/
 debug_var/
-test_result/
+eval_result/
+
+# Ignore everything inside the data folder
+/data/
+
+# # Allow specific files in the data/lidc folder
+# !/data/lidc/lidc_infos_train.pkl
+# !/data/lidc/lidc_infos_train_2d_anno.coco.json
+# !/data/lidc/lidc_infos_val.pkl
+# !/data/lidc/lidc_infos_val_2d_anno.coco.json
