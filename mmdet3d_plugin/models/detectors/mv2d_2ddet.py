@@ -15,7 +15,7 @@ from mmdet3d_plugin.models.utils.grid_mask import CustomGridMask
 
 
 @DETECTORS.register_module()
-class MV2D(Base3DDetector):
+class MV2D2DDet(Base3DDetector):
 
     def __init__(self,
                  base_detector,
@@ -195,27 +195,27 @@ class MV2D(Base3DDetector):
         for k, v in losses_detector.items():
             losses['det_' + k] = v
 
-        # generate 2D detection
-        self.base_detector.set_detection_cfg(self.train_cfg.get('detection_proposal'))
-        #breakpoint() #debug
-        with torch.no_grad():
-            results = self.base_detector.simple_test_w_feat(detector_feat, img_metas)
-        #breakpoint() #debug
-        # process 2D detection
-        detections = self.process_2d_detections(results, img.device)
-        if self.train_cfg.get('complement_2d_gt', -1) > 0:
-            detections_gt = self.process_2d_gt(gt_bboxes, gt_labels, img.device)
-            detections = [self.complement_2d_gt(det, det_gt, thr=self.train_cfg.get('complement_2d_gt'))
-                          for det, det_gt in zip(detections, detections_gt)]
+        # # generate 2D detection
+        # self.base_detector.set_detection_cfg(self.train_cfg.get('detection_proposal'))
+        # #breakpoint() #debug
+        # with torch.no_grad():
+        #     results = self.base_detector.simple_test_w_feat(detector_feat, img_metas)
+        # #breakpoint() #debug
+        # # process 2D detection
+        # detections = self.process_2d_detections(results, img.device)
+        # if self.train_cfg.get('complement_2d_gt', -1) > 0:
+        #     detections_gt = self.process_2d_gt(gt_bboxes, gt_labels, img.device)
+        #     detections = [self.complement_2d_gt(det, det_gt, thr=self.train_cfg.get('complement_2d_gt'))
+        #                   for det, det_gt in zip(detections, detections_gt)]
 
-        # calculate losses for 3d detector
-        feat = self.process_detector_feat(detector_feat)
-        #breakpoint() #debug
-        roi_losses = self.roi_head.forward_train(feat, img_metas, detections, gt_bboxes, gt_labels,
-                                                 gt_bboxes_3d, gt_labels_3d,
-                                                 ori_gt_bboxes_3d, ori_gt_labels_3d,
-                                                 attr_labels, None)
-        losses.update(roi_losses)
+        # # calculate losses for 3d detector
+        # feat = self.process_detector_feat(detector_feat)
+        # #breakpoint() #debug
+        # roi_losses = self.roi_head.forward_train(feat, img_metas, detections, gt_bboxes, gt_labels,
+        #                                          gt_bboxes_3d, gt_labels_3d,
+        #                                          ori_gt_bboxes_3d, ori_gt_labels_3d,
+        #                                          attr_labels, None)
+        # losses.update(roi_losses)
         return losses
 
     def forward_test(self, img, img_metas, **kwargs):

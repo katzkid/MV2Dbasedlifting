@@ -27,6 +27,10 @@ mc mirror --overwrite ./work_dirs s3/kdang/safran/MV2Dbasedlifting/work_dirs
 mc mirror --overwrite ./data s3/kdang/safran/MV2Dbasedlifting/data
 mc mirror --overwrite ./weights s3/kdang/safran/MV2Dbasedlifting/weights
 
+## Copy from S3 to local
+mc cp --recursive s3/kdang/safran/MV2Dbasedlifting/work_dirs .
+mc cp --recursive s3/kdang/safran/MV2Dbasedlifting/data .
+mc cp --recursive s3/kdang/safran/MV2Dbasedlifting/weights . 
 
 
 

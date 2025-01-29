@@ -8,6 +8,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 # ------------------------------------------------------------------------
 from .mv2d import MV2D
+from .mv2d_2ddet import MV2D2DDet
 from .mv2d_t import MV2DT
 from .wrap_detector import *
-__all__ = ['MV2D', 'MV2DT']
+__all__ = ['MV2D', 'MV2DT', 'MV2D2DDet']

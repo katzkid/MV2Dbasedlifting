@@ -19,6 +19,20 @@
         }
     },
     {
+        "name": "Debug LIDC_2D Detection train",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "${workspaceFolder}/tools/train.py",
+        "console": "integratedTerminal",
+        "args": [
+            "configs/lidc/model/mv2d_r50_frcnn_2ddet__toy_ep50.py"  
+        ],
+        "justMyCode": false,
+        "env": {
+            "PYTHONPATH": "${workspaceFolder}"
+        }
+    },
+    {
         "name": "Debug LIDC test",
         "type": "debugpy",
         "request": "launch",

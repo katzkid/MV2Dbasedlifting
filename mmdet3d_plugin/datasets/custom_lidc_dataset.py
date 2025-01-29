@@ -82,6 +82,7 @@ class CustomLIDCDataset(Custom3DDataset):
             )
 
         self.load_annotations_2d(ann_file_2d)
+        self.data_infos = self.load_annotations(self.ann_file)
 
     def __len__(self):
         return super(CustomLIDCDataset, self).__len__()
@@ -681,8 +682,6 @@ class CustomLIDCDataset(Custom3DDataset):
             show_result(
                 points, show_gt_bboxes, show_pred_bboxes, out_dir, file_name, show
             )
-
-
 
 
 def output_to_nusc_box(detection, with_velocity=True):

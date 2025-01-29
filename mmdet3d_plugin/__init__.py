@@ -14,7 +14,7 @@ from .core.bbox.match_costs import BBox3DL1Cost
 from .datasets import CustomNuScenesDataset
 from .datasets.pipelines import PhotoMetricDistortionMultiViewImage
 from .models.roi_heads import MV2DHead, MV2DTHead
-from .models.detectors import MV2D
+from .models.detectors import MV2D, MV2D2DDet
 from .models.utils.petr_transformer import PETRTransformer
 from .models.necks import *
 from .models.backbones import *
