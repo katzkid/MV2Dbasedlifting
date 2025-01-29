@@ -37,6 +37,9 @@ mc cp --recursive s3/kdang/safran/MV2Dbasedlifting/weights .
 ## Train script
 bash tools/dist_train.sh configs/lidc/model/mv2d_r50_frcnn_single_frame_roi_1024x1024_ep24_lidc.py 1
 
+### Train 2D Detection model only
+bash tools/dist_train.sh configs/lidc/model/mv2d_r50_frcnn_2ddet__toy_ep50.py 1
+
 ## Test and inference 
 - Run bash script: 
 

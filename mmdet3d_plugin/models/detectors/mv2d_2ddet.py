@@ -20,7 +20,7 @@ class MV2D2DDet(Base3DDetector):
     def __init__(self,
                  base_detector,
                  neck,
-                 roi_head,
+                #  roi_head,
                  train_cfg=None,
                  test_cfg=None,
                  use_grid_mask=None,
@@ -31,11 +31,11 @@ class MV2D2DDet(Base3DDetector):
 
         self.base_detector = build_detector(base_detector)
         self.neck = build_neck(neck)
-        if train_cfg is not None:
-            roi_head.update(train_cfg=train_cfg['rcnn'])
-        if test_cfg is not None:
-            roi_head.update(test_cfg=test_cfg['rcnn'])
-        self.roi_head = build_head(roi_head)
+        # if train_cfg is not None:
+        #     roi_head.update(train_cfg=train_cfg['rcnn'])
+        # if test_cfg is not None:
+        #     roi_head.update(test_cfg=test_cfg['rcnn'])
+        # self.roi_head = build_head(roi_head)
 
         self.use_grid_mask = isinstance(use_grid_mask, dict)
         if self.use_grid_mask:
@@ -137,6 +137,10 @@ class MV2D2DDet(Base3DDetector):
                       attr_labels=None,
                       gt_bboxes_ignore=None):
 
+        #logger
+        sample_idx = img_metas[0]["sample_idx"]
+        print(f"Start train: {sample_idx}")
+
         losses = dict()
         batch_size, num_views, c, h, w = img.shape 
         img = img.view(batch_size * num_views, *img.shape[2:])
@@ -216,6 +220,9 @@ class MV2D2DDet(Base3DDetector):
         #                                          ori_gt_bboxes_3d, ori_gt_labels_3d,
         #                                          attr_labels, None)
         # losses.update(roi_losses)
+
+        # logger
+        print(f"Finish forward_train. Return loss2D for {sample_idx}")
         return losses
 
     def forward_test(self, img, img_metas, **kwargs):
@@ -270,35 +277,36 @@ class MV2D2DDet(Base3DDetector):
         bbox_outputs = []
         box_type_3d = img_metas[0]['box_type_3d']
 
-        # 3D NMS
-        for i in range(batch_size):
-            # bbox_outputs_i: len(num_views)
-            bbox_outputs_i = bbox_outputs_all[i * num_views:i * num_views + num_views]
-            all_bboxes = box_type_3d.cat([x[0] for x in bbox_outputs_i])
-            all_scores = torch.cat([x[1] for x in bbox_outputs_i])
-            all_classes = torch.cat([x[2] for x in bbox_outputs_i])
+        # # 3D NMS
+        # for i in range(batch_size):
+        #     # bbox_outputs_i: len(num_views)
+        #     bbox_outputs_i = bbox_outputs_all[i * num_views:i * num_views + num_views]
+        #     all_bboxes = box_type_3d.cat([x[0] for x in bbox_outputs_i])
+        #     all_scores = torch.cat([x[1] for x in bbox_outputs_i])
+        #     all_classes = torch.cat([x[2] for x in bbox_outputs_i])
 
-            all_scores_classes = all_scores.new_zeros(
-                (len(all_scores), self.roi_head.num_classes + 1)).scatter_(1, all_classes[:, None], all_scores[:, None])
+        #     all_scores_classes = all_scores.new_zeros(
+        #         (len(all_scores), self.roi_head.num_classes + 1)).scatter_(1, all_classes[:, None], all_scores[:, None])
 
-            cfg = self.test_cfg.get('rcnn')
-            results = box3d_multiclass_nms(all_bboxes.tensor, all_bboxes.bev,
-                                           all_scores_classes, cfg.score_thr, cfg.max_per_scene, cfg.nms)
+        #     cfg = self.test_cfg.get('rcnn')
+        #     results = box3d_multiclass_nms(all_bboxes.tensor, all_bboxes.bev,
+        #                                    all_scores_classes, cfg.score_thr, cfg.max_per_scene, cfg.nms)
 
-            bbox_outputs.append((
-                box_type_3d(results[0], box_dim=all_bboxes.tensor.shape[1], with_yaw=all_bboxes.with_yaw),
-                results[1], results[2]))
+        #     bbox_outputs.append((
+        #         box_type_3d(results[0], box_dim=all_bboxes.tensor.shape[1], with_yaw=all_bboxes.with_yaw),
+        #         results[1], results[2]))
 
-        bbox_pts = [
-            bbox3d2result(bboxes, scores, labels)
-            for bboxes, scores, labels in bbox_outputs
-        ]
+        # bbox_pts = [
+        #     bbox3d2result(bboxes, scores, labels)
+        #     for bboxes, scores, labels in bbox_outputs
+        # ]
 
-        bbox_list = [dict() for i in range(batch_size)]
-        for result_dict, pts_bbox in zip(bbox_list, bbox_pts):
-            result_dict['pts_bbox'] = pts_bbox
+        # bbox_list = [dict() for i in range(batch_size)]
+        # for result_dict, pts_bbox in zip(bbox_list, bbox_pts):
+        #     result_dict['pts_bbox'] = pts_bbox
 
-        return bbox_list
+        # return bbox_list
+        return detections
 
     def aug_test(self, imgs, img_metas, rescale=False):
         raise NotImplementedError

@@ -408,7 +408,7 @@ class CustomLIDCDataset(Custom3DDataset):
         for i, ann in enumerate(ann_info_2d):
             if ann.get('ignore', False):
                 continue
-            x1, y1, w, h = ann['bbox']
+            y1, x1, h, w = ann["bbox"]  # switch order of x1, y1
             inter_w = max(0, min(x1 + w, img_info_2d['width']) - max(x1, 0))
             inter_h = max(0, min(y1 + h, img_info_2d['height']) - max(y1, 0))
             if inter_w * inter_h == 0:

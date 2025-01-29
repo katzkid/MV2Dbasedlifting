@@ -1,5 +1,5 @@
 _base_ = [
-    '../data/lidc_toy_sample.py', '../detectors/maskrcnn_r50.py'
+    '../data/lidc.py', '../detectors/maskrcnn_r50.py'
 ]
 
 point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
@@ -37,107 +37,107 @@ model = dict(
         end_level=2,
         num_outs=1,
     ),
-    roi_head=dict(
-        type="MV2DSHead",
-        pc_range=point_cloud_range,
-        force_fp32=True,
-        use_denoise=False,
-        bbox_roi_extractor=dict(
-            type="SingleRoIExtractor",
-            roi_layer=dict(type="RoIAlign", output_size=roi_size, sampling_ratio=-1),
-            featmap_strides=roi_srides,
-            out_channels=512,
-        ),
-        bbox_head=dict(
-            type="CrossAttentionBoxHead",
-            num_classes=1,
-            group_reg_dims=(2, 2, 2, 2),  # added group_reg_dims
-            pc_range=point_cloud_range,
-            transformer=dict(
-                type="MV2DTransformer",
-                decoder=dict(
-                    type="PETRTransformerDecoder",
-                    return_intermediate=True,
-                    num_layers=6,
-                    transformerlayers=dict(
-                        type="PETRTransformerDecoderLayer",
-                        attn_cfgs=[
-                            dict(
-                                type="FlattenMHSelfAttention",
-                                embed_dims=256,
-                                num_heads=8,
-                                dropout=0.1,
-                            ),
-                            dict(
-                                type="PETRMultiheadAttention",
-                                embed_dims=256,
-                                num_heads=8,
-                                dropout=0.1,
-                            ),
-                        ],
-                        feedforward_channels=2048,
-                        ffn_dropout=0.1,
-                        with_cp=False,  ###use checkpoint to save memory
-                        operation_order=(
-                            "self_attn",
-                            "norm",
-                            "cross_attn",
-                            "norm",
-                            "ffn",
-                            "norm",
-                        ),
-                    ),
-                ),
-            ),
-            bbox_coder=dict(
-                type="NMSFreeCoder",
-                post_center_range=post_range,
-                pc_range=point_cloud_range,
-                max_num=300,
-                num_classes=1,
-            ),
-            # code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.5, 1.5, 2.0, 2.0],
-            code_weights=[1.0],
-            loss_cls=dict(
-                type="FocalLoss",
-                use_sigmoid=True,
-                gamma=2.0,
-                alpha=0.25,
-                loss_weight=2.0,
-            ),
-            loss_bbox=dict(type="L1Loss", loss_weight=0.25),
-        ),
-        query_generator=dict(
-            with_avg_pool=True,
-            num_shared_convs=1,
-            num_shared_fcs=1,
-            in_channels=256,
-            fc_out_channels=1024,
-            roi_feat_size=roi_size,
-            extra_encoding=dict(
-                num_layers=2,
-                feat_channels=[512, 256],
-                features=[
-                    dict(
-                        type="intrinsic",
-                        in_channels=16,
-                    )
-                ],
-            ),
-        ),
-        pe=dict(
-            positional_encoding=dict(
-                type="SinePositionalEncoding3D", num_feats=128, normalize=True
-            ),
-            strides=roi_srides,
-            position_range=post_range,
-            depth_num=64,
-            with_fpe=True,
-        ),
-        box_correlation=dict(
-            correlation_mode="topk_matched:1:0.0:0.0",
-        ),
-    ),
+    # roi_head=dict(
+    #     type="MV2DSHead",
+    #     pc_range=point_cloud_range,
+    #     force_fp32=True,
+    #     use_denoise=False,
+    #     bbox_roi_extractor=dict(
+    #         type="SingleRoIExtractor",
+    #         roi_layer=dict(type="RoIAlign", output_size=roi_size, sampling_ratio=-1),
+    #         featmap_strides=roi_srides,
+    #         out_channels=512,
+    #     ),
+    #     bbox_head=dict(
+    #         type="CrossAttentionBoxHead",
+    #         num_classes=1,
+    #         group_reg_dims=(2, 2, 2, 2),  # added group_reg_dims
+    #         pc_range=point_cloud_range,
+    #         transformer=dict(
+    #             type="MV2DTransformer",
+    #             decoder=dict(
+    #                 type="PETRTransformerDecoder",
+    #                 return_intermediate=True,
+    #                 num_layers=6,
+    #                 transformerlayers=dict(
+    #                     type="PETRTransformerDecoderLayer",
+    #                     attn_cfgs=[
+    #                         dict(
+    #                             type="FlattenMHSelfAttention",
+    #                             embed_dims=256,
+    #                             num_heads=8,
+    #                             dropout=0.1,
+    #                         ),
+    #                         dict(
+    #                             type="PETRMultiheadAttention",
+    #                             embed_dims=256,
+    #                             num_heads=8,
+    #                             dropout=0.1,
+    #                         ),
+    #                     ],
+    #                     feedforward_channels=2048,
+    #                     ffn_dropout=0.1,
+    #                     with_cp=False,  ###use checkpoint to save memory
+    #                     operation_order=(
+    #                         "self_attn",
+    #                         "norm",
+    #                         "cross_attn",
+    #                         "norm",
+    #                         "ffn",
+    #                         "norm",
+    #                     ),
+    #                 ),
+    #             ),
+    #         ),
+    #         bbox_coder=dict(
+    #             type="NMSFreeCoder",
+    #             post_center_range=post_range,
+    #             pc_range=point_cloud_range,
+    #             max_num=300,
+    #             num_classes=1,
+    #         ),
+    #         # code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.5, 1.5, 2.0, 2.0],
+    #         code_weights=[1.0],
+    #         loss_cls=dict(
+    #             type="FocalLoss",
+    #             use_sigmoid=True,
+    #             gamma=2.0,
+    #             alpha=0.25,
+    #             loss_weight=2.0,
+    #         ),
+    #         loss_bbox=dict(type="L1Loss", loss_weight=0.25),
+    #     ),
+    #     query_generator=dict(
+    #         with_avg_pool=True,
+    #         num_shared_convs=1,
+    #         num_shared_fcs=1,
+    #         in_channels=256,
+    #         fc_out_channels=1024,
+    #         roi_feat_size=roi_size,
+    #         extra_encoding=dict(
+    #             num_layers=2,
+    #             feat_channels=[512, 256],
+    #             features=[
+    #                 dict(
+    #                     type="intrinsic",
+    #                     in_channels=16,
+    #                 )
+    #             ],
+    #         ),
+    #     ),
+    #     pe=dict(
+    #         positional_encoding=dict(
+    #             type="SinePositionalEncoding3D", num_feats=128, normalize=True
+    #         ),
+    #         strides=roi_srides,
+    #         position_range=post_range,
+    #         depth_num=64,
+    #         with_fpe=True,
+    #     ),
+    #     box_correlation=dict(
+    #         correlation_mode="topk_matched:1:0.0:0.0",
+    #     ),
+    # ),
     train_cfg=dict(
         complement_2d_gt=0.4,
         detection_proposal=dict(
@@ -190,8 +190,8 @@ model = dict(
                 use_rotate_nms=True,
             ),
             max_per_scene=300,
-        ),
-    ),
+        )
+    )
 )
 
 data = dict(
@@ -226,5 +226,5 @@ total_epochs = 50
 runner = dict(type='EpochBasedRunner', max_epochs=total_epochs)
 # Temporary turn off evaluation hook
 evaluation = dict(interval=100, )
-find_unused_parameters = False
+find_unused_parameters = True
 log_config = dict(interval=50)
