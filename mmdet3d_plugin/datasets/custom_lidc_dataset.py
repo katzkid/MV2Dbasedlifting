@@ -185,7 +185,7 @@ class CustomLIDCDataset(Custom3DDataset):
         # Compute extrinsics
         num_cameras = 10
         angle_step = 360 / num_cameras  # Angle separation between cameras
-        radius = 0.3  # Distance from the origin
+        radius = 300  # Distance from the origin
 
         # Compute extrinsics for all cameras
         extrinsics_local = []
@@ -308,7 +308,7 @@ class CustomLIDCDataset(Custom3DDataset):
         # Compute extrinsics
         num_cameras = 10
         angle_step = 360 / num_cameras  # Angle separation between cameras
-        radius = 0.3  # Distance from the origin
+        radius = 300  # Distance from the origin
 
         # Compute extrinsics for all cameras
         extrinsics_local = []
@@ -344,6 +344,19 @@ class CustomLIDCDataset(Custom3DDataset):
         for i in range(len(gt_bboxes_3d)):
             gt_bboxes_3d[i][:3] = gt_bboxes_3d_coords_cam[i][0]
         # print("CAM_gt_bboxes_3d", gt_bboxes_3d)
+
+        #Adjust for the SID (Source is at 300,0,0 and detector is at -300,0,0)
+        SID = 600
+        gt_bboxes_3d[:][0] += SID
+
+
+        # # Combine the transformed cam coordinates with the original dimensions and orientation
+        # gt_bboxes_3d = torch.cat([
+        #     gt_bboxes_3d_coords_cam,  # Transformed [x, y, z]
+        #     gt_bboxes_3d[:, 3:6],  # Original [l, w, h]
+        #     gt_bboxes_3d[:, 6:7],  # Original yaw (may need adjustment)
+        # ], dim=1)
+        ################################################################################################
 
         gt_names_3d = info['gt_names']
         gt_labels_3d = []
@@ -388,7 +401,7 @@ class CustomLIDCDataset(Custom3DDataset):
         ###################################################################################
         num_cameras = 10
         angle_step = 360 / num_cameras  # Angle separation between cameras
-        radius = 0.3  # Distance from the origin
+        radius = 300  # Distance from the origin
 
         # Compute extrinsics for all cameras
         extrinsics = []

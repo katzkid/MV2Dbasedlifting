@@ -3,10 +3,16 @@ import numpy as np
 # Function to compute the rotation matrix and translation vector
 def compute_extrinsics(theta_deg, r):
     theta_rad = np.deg2rad(theta_deg)
-    R_1 = np.array([
-        [np.cos(theta_rad), 0, -np.sin(theta_rad)],
-        [0, 1, 0],
-        [np.sin(theta_rad), 0, np.cos(theta_rad)]
+    # R_1 = np.array([
+    #     [np.cos(theta_rad), 0, -np.sin(theta_rad)],
+    #     [0, 1, 0],
+    #     [np.sin(theta_rad), 0, np.cos(theta_rad)]
+    # ])
+    R_1 = np.array([ # constant wrt Z axis
+        [np.cos(theta_rad), -np.sin(theta_rad), 0],
+        [np.sin(theta_rad), np.cos(theta_rad), 0],
+        [0, 0, 1]
+        
     ])
     R_z = np.array([
         [0,1,0],
@@ -15,15 +21,20 @@ def compute_extrinsics(theta_deg, r):
     ])
     R_x = np.array([
         [1,0,0],
-        [0,0,-1],
-        [0,1,0]
+        [0,0,1],
+        [0,-1,0]
     ])
     R_zx = np.dot(R_x,R_z)
     R = np.dot(R_1,R_zx)
-    t = np.array([
+    # t = np.array([
+    #     [r * np.cos(theta_rad)],
+    #     [0],
+    #     [r * np.sin(theta_rad)]
+    # ])
+    t = np.array([ # constant wrt Z axis
         [r * np.cos(theta_rad)],
-        [0],
-        [r * np.sin(theta_rad)]
+        [r * np.sin(theta_rad)],
+        [0]
     ])
     return R, t
 
