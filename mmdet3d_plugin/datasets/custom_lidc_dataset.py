@@ -334,14 +334,14 @@ class CustomLIDCDataset(Custom3DDataset):
         # else:
         #     mask = info['num_lidar_pts'] > 0
         gt_bboxes_3d = info['gt_boxes']
-        print("gt_bboxes_3d", gt_bboxes_3d)
+        #print("gt_bboxes_3d", gt_bboxes_3d)
         # Extract the first three coordinates of each bounding box
         gt_bboxes_3d_coords = np.array([bbox[:3] for bbox in gt_bboxes_3d])
 
         # Convert to camera coordinates
         gt_bboxes_3d_coords_cam = world_to_camera_frame(gt_bboxes_3d_coords, homogeneous_extrinsics[:1])
 
-        print("gt_bboxes_3d_coords_cam", gt_bboxes_3d_coords_cam)
+        #print("gt_bboxes_3d_coords_cam", gt_bboxes_3d_coords_cam)
 
         # Update each bounding box's coordinates with the new camera-space values
         Xc = []
@@ -350,10 +350,10 @@ class CustomLIDCDataset(Custom3DDataset):
             first_element = gt_bboxes_3d_coords_cam[i][0][0]  # Access the first element of the array
             Xc.append(first_element)  # Append to Xc
 
-        print("gt_bboxes_3d after compute", gt_bboxes_3d)
+        #print("gt_bboxes_3d after compute", gt_bboxes_3d)
 
 
-        print("Xc", Xc)
+        #print("Xc", Xc)
 
         #Adjust for the SID (Source is at 300,0,0 and detector is at -300,0,0)
         SID = 600
@@ -364,7 +364,7 @@ class CustomLIDCDataset(Custom3DDataset):
         #scaling_factor = [SID/ x for x in Xc]
         scaling_factor = [SID] * len(Xc)
 
-        print("scaling_factor", scaling_factor)
+        #print("scaling_factor", scaling_factor)
 
 
 
