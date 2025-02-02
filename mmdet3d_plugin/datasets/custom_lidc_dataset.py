@@ -24,6 +24,7 @@ import os
 import copy
 from mmdet3d.core.bbox import CameraInstance3DBoxes, LiDARInstance3DBoxes, get_box_type, Box3DMode, Coord3DMode
 from mmdet3d.core import show_result
+import torch
 
 
 from sandbox.extrinsic_params_calculator import compute_extrinsics, extrinsic_to_homogeneous, world_to_camera_frame #extrinsic params computation
@@ -333,21 +334,38 @@ class CustomLIDCDataset(Custom3DDataset):
         # else:
         #     mask = info['num_lidar_pts'] > 0
         gt_bboxes_3d = info['gt_boxes']
-        # print("gt_bboxes_3d", gt_bboxes_3d)
+        print("gt_bboxes_3d", gt_bboxes_3d)
         # Extract the first three coordinates of each bounding box
         gt_bboxes_3d_coords = np.array([bbox[:3] for bbox in gt_bboxes_3d])
 
         # Convert to camera coordinates
         gt_bboxes_3d_coords_cam = world_to_camera_frame(gt_bboxes_3d_coords, homogeneous_extrinsics[:1])
 
-        # Update the original bounding boxes with the transformed coordinates
+        print("gt_bboxes_3d_coords_cam", gt_bboxes_3d_coords_cam)
+
+        # Update each bounding box's coordinates with the new camera-space values
+        Xc = []
         for i in range(len(gt_bboxes_3d)):
             gt_bboxes_3d[i][:3] = gt_bboxes_3d_coords_cam[i][0]
-        # print("CAM_gt_bboxes_3d", gt_bboxes_3d)
+            first_element = gt_bboxes_3d_coords_cam[i][0][0]  # Access the first element of the array
+            Xc.append(first_element)  # Append to Xc
+
+        print("gt_bboxes_3d after compute", gt_bboxes_3d)
+
+
+        print("Xc", Xc)
 
         #Adjust for the SID (Source is at 300,0,0 and detector is at -300,0,0)
         SID = 600
         gt_bboxes_3d[:][0] += SID
+        Xc = [x + SID for x in Xc]
+
+        #compute the scaling factor
+        #scaling_factor = [SID/ x for x in Xc]
+        scaling_factor = [SID] * len(Xc)
+
+        print("scaling_factor", scaling_factor)
+
 
 
         # # Combine the transformed cam coordinates with the original dimensions and orientation
@@ -379,6 +397,9 @@ class CustomLIDCDataset(Custom3DDataset):
             gt_bboxes_3d,
             box_dim=gt_bboxes_3d.shape[-1],
             origin=(0.0, 0.0, 0.0)).convert_to(self.box_mode_3d)
+        
+        #Scale down the gt_bboxes_3d by scaling_factor
+        #gt_bboxes_3d = scale_camera_boxes(gt_bboxes_3d, scaling_factor)
 
         anns_results = dict(
             gt_bboxes_3d=gt_bboxes_3d,
@@ -413,7 +434,6 @@ class CustomLIDCDataset(Custom3DDataset):
         # Compute homogeneous extrinsic matrices for all cameras
         homogeneous_extrinsics = [extrinsic_to_homogeneous(R, t) for R, t in extrinsics]
         ###################################################################################
-
         gt_bboxes = []
         gt_labels = []
         gt_bboxes_ignore = []
@@ -440,7 +460,9 @@ class CustomLIDCDataset(Custom3DDataset):
                 # print("bbox_cam3d_world", bbox_cam3d[0][:3])
                 # convert to camera instance 3d boxes
                 bbox_cam3d[0][:3] = np.array(world_to_camera_frame(np.array([bbox_cam3d[0][:3]]), homogeneous_extrinsics[:1])[0])
-                # print("CAM_bbox_cam3d", bbox_cam3d)
+                #Adjust for the SID (Source is at 300,0,0 and detector is at -300,0,0)
+                SID = 600
+                bbox_cam3d[0][0] += SID
                 bbox_cam3d = np.concatenate([bbox_cam3d], axis=-1)
                 gt_bboxes_cam3d.append(bbox_cam3d.squeeze())
 
@@ -696,6 +718,72 @@ class CustomLIDCDataset(Custom3DDataset):
                 points, show_gt_bboxes, show_pred_bboxes, out_dir, file_name, show
             )
 
+    def scale_camera_boxes(self, boxes, scaling_factor):
+        """
+        Scale down 3D bounding boxes in a `CameraInstance3DBoxes` object by given scaling factors.
+        Each element in the scaling_factor list corresponds to a specific box.
+
+        Args:
+            boxes (CameraInstance3DBoxes): The input box object to be scaled.
+            scaling_factor (float | list[float]): The scaling factors to reduce the size of the boxes.
+                If a single float is provided, it will be applied to all boxes.
+                Must be between 0 and 1.
+
+        Returns:
+            CameraInstance3DBoxes: A new `CameraInstance3DBoxes` object with scaled-down boxes.
+        """
+        # Extract the current tensor representation
+        tensor = boxes.tensor
+
+        if tensor.numel() == 0:
+            return CameraInstance3DBoxes(tensor, box_dim=tensor.shape[1], with_yaw=boxes.with_yaw)
+
+        # Get center coordinates (gravity_center)
+        centers = boxes.gravity_center  # Shape: (N, 3)
+        print("centers", centers)
+        
+        # Compute the original extents
+        original_extents = tensor[:, [3, 4, 5]]  # dx, dy, dz
+
+        # Ensure scaling_factor is a list and has the same length as the number of boxes
+        if isinstance(scaling_factor, float):
+            scaling_factor = [scaling_factor] * len(tensor)
+        else:
+            assert len(scaling_factor) == len(tensor), (
+                "The length of scaling_factor must match the number of boxes."
+            )
+
+        # Compute the bottom center before scaling
+        bottom_centers = boxes.bottom_center
+        print("bottom_centers", bottom_centers)
+
+        # Scale the dimensions individually for each box
+        scaled_extents = torch.zeros_like(original_extents)
+        for i in range(len(tensor)):
+            sf = scaling_factor[i]
+            scaled_extents[i] = original_extents[i] * sf
+
+        print("scaled_extents", scaled_extents)
+
+        # Reconstruct the new tensor using the bottom center as a reference
+        new_tensor = torch.zeros_like(tensor)
+        new_centers = centers.copy()
+        
+        # Adjust y-coordinate based on scaled dy
+        new_centers[:, 1] += scaled_extents[:, 1]
+        
+        print("new_centers", new_centers)
+
+        # Update the new tensor with scaled extents and adjusted centers
+        new_tensor[:, :3] = new_centers
+        new_tensor[:, 3] = (scaled_extents[:, 0])  # Scaled dx
+        new_tensor[:, 4] = (scaled_extents[:, 1]) # Scaled dy
+        new_tensor[:, 5] = (scaled_extents[:, 2])  # Scaled dz
+        new_tensor[:, 6] = tensor[:, 6]  # Yaw remains the same
+
+        # Create a new CameraInstance3DBoxes object with the scaled tensor
+        return CameraInstance3DBoxes(new_tensor, box_dim=tensor.shape[1], with_yaw=boxes.with_yaw)
+
 
 def output_to_nusc_box(detection, with_velocity=True):
     """Convert the output to the box class in the nuScenes.
@@ -778,3 +866,8 @@ def lidar_nusc_box_to_global(
         box.translate(np.array(info["ego2global_translation"]))
         box_list.append(box)
     return box_list
+
+
+
+
+
