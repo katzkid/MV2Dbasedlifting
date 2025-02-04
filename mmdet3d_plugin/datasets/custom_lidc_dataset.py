@@ -353,18 +353,7 @@ class CustomLIDCDataset(Custom3DDataset):
         #print("gt_bboxes_3d after compute", gt_bboxes_3d)
 
 
-        #print("Xc", Xc)
 
-        #Adjust for the SID (Source is at 300,0,0 and detector is at -300,0,0)
-        SID = 600
-        gt_bboxes_3d[:][0] += SID
-        Xc = [x + SID for x in Xc]
-
-        #compute the scaling factor
-        #scaling_factor = [SID/ x for x in Xc]
-        scaling_factor = [SID] * len(Xc)
-
-        #print("scaling_factor", scaling_factor)
 
 
 
