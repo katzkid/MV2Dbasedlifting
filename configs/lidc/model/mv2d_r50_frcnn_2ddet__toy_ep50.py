@@ -1,5 +1,5 @@
 _base_ = [
-    '../data/lidc.py', '../detectors/maskrcnn_r50.py'
+    '../data/lidc_toy_sample.py', '../detectors/maskrcnn_r50.py'
 ]
 
 point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
@@ -175,7 +175,7 @@ model = dict(
         detection_proposal=dict(
             score_thr=0.05,
             nms_pre=1000,
-            max_per_img=75,
+            max_per_img=10,
             nms=dict(
                 type="nms",
                 iou_threshold=0.6,

@@ -273,9 +273,9 @@ class MV2D2DDet(Base3DDetector):
         feat = self.process_detector_feat(detector_feat)
 
         # generate 3D detection
-        bbox_outputs_all = self.roi_head.simple_test(feat, detections, img_metas, rescale=rescale)
-        bbox_outputs = []
-        box_type_3d = img_metas[0]['box_type_3d']
+        # bbox_outputs_all = self.roi_head.simple_test(feat, detections, img_metas, rescale=rescale)
+        # bbox_outputs = []
+        # box_type_3d = img_metas[0]['box_type_3d']
 
         # # 3D NMS
         # for i in range(batch_size):

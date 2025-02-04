@@ -3,17 +3,58 @@
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Python Debugger: Current File",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal",
-            "python": "/home/katzkid/miniforge3/envs/MV2Denv/bin/python",
-            "env": {
-                "PYTHONPATH": "${fileDirname}${pathSeparator}.."
-            }
+"configurations": [
+    {
+        "name": "Debug LIDC train",
+        "type": "debugpy", 
+        "request": "launch",
+        "program": "${workspaceFolder}/tools/train.py",
+        "console": "integratedTerminal",
+        "args": [
+            "configs/lidc/model/mv2d_r50_frcnn_2ddet__toy_ep50.py"
+        ],
+        "justMyCode": false,
+        "env": {
+            "PYTHONPATH": "${workspaceFolder}"
         }
-    ]
+    },
+    {
+        "name": "Debug LIDC_2D Detection train",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "${workspaceFolder}/tools/train.py",
+        "console": "integratedTerminal",
+        "args": [
+            "configs/lidc/model/mv2d_r50_frcnn_2ddet__toy_ep50.py"  
+        ],
+        "justMyCode": false,
+        "env": {
+            "PYTHONPATH": "${workspaceFolder}"
+        }
+    },
+    {
+        "name": "Debug LIDC test",
+        "type": "debugpy",
+        "request": "launch",
+        // "cwd": "${workspaceFolder}/",
+        "program": "${workspaceFolder}/tools/test.py",
+        // "python": "${workspaceFolder}/mv2denv/bin/python",
+        "console": "integratedTerminal",
+        "args": [
+            // "configs/lidc/model/mv2d_r50_frcnn_sample_debug.py",
+            // "work_dirs/mv2d_r50_frcnn_single_frame_roi_1024x1024_ep24_lidc/latest.pth",
+
+            //Test 2D-Det only
+            "configs/lidc/model/mv2d_r50_frcnn_2ddet__toy_ep50.py",
+            "work_dirs/mv2d_r50_frcnn_2ddet__toy_ep50/latest.pth",
+            "--eval",
+            "bbox"
+        ],
+        "justMyCode": false,
+        "env": {
+            "PYTHONPATH": "${workspaceFolder}"
+        }
+        }
+]
+    
 }
