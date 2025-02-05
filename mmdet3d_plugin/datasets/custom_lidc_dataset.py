@@ -216,6 +216,16 @@ class CustomLIDCDataset(Custom3DDataset):
             # lidar2cam_rt[3, :3] = -lidar2cam_t
             lidar2cam_rt = extrinsics[cam_idx]
             intrinsic = cam_info['cam_intrinsic']
+            #convert intrinsic values from mm to pixels
+            pixel_size = 800/1024
+            intrinsic[0, 0] = intrinsic[0, 0] / pixel_size
+            intrinsic[1, 1] = intrinsic[1, 1] / pixel_size
+            intrinsic[0, 2] = intrinsic[0, 2] / pixel_size
+            intrinsic[1, 2] = intrinsic[1, 2] / pixel_size 
+            #recenter back to 0,0
+            intrinsic[0, 2] = -intrinsic[0, 2]
+            intrinsic[1, 2] = -intrinsic[1, 2]
+
             viewpad = np.eye(4)
             viewpad[:intrinsic.shape[0], :intrinsic.shape[1]] = intrinsic
             lidar2img_rt = (viewpad @ lidar2cam_rt.T)
