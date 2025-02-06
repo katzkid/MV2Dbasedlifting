@@ -147,7 +147,7 @@ model = dict(
         detection_proposal=dict(
             score_thr=0.05,
             nms_pre=1000,
-            max_per_img=75,
+            max_per_img=10,
             nms=dict(type='nms', iou_threshold=0.6, class_agnostic=True, ),
             min_bbox_size=8),
         rcnn=dict(
