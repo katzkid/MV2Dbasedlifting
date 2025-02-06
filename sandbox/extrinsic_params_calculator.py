@@ -8,34 +8,43 @@ def compute_extrinsics(theta_deg, r):
     #     [0, 1, 0],
     #     [np.sin(theta_rad), 0, np.cos(theta_rad)]
     # ])
-    R_1 = np.array([ # constant wrt Z axis
-        [np.cos(theta_rad), -np.sin(theta_rad), 0],
-        [np.sin(theta_rad), np.cos(theta_rad), 0],
-        [0, 0, 1]
+    # R_1 = np.array([ # constant wrt Z axis
+    #     [np.cos(theta_rad), -np.sin(theta_rad), 0],
+    #     [np.sin(theta_rad), np.cos(theta_rad), 0],
+    #     [0, 0, 1]
         
-    ])
-    R_z = np.array([
-        [0,1,0],
-        [-1,0,0],
-        [0,0,1]
-    ])
-    R_x = np.array([
-        [1,0,0],
-        [0,0,1],
-        [0,-1,0]
-    ])
-    R_zx = np.dot(R_x,R_z)
-    R = np.dot(R_1,R_zx)
-    # t = np.array([
-    #     [r * np.cos(theta_rad)],
-    #     [0],
-    #     [r * np.sin(theta_rad)]
     # ])
-    t = np.array([ # constant wrt Z axis
-        [r * np.cos(theta_rad)],
-        [r * np.sin(theta_rad)],
-        [0]
-    ])
+    # R_z = np.array([
+    #     [0,1,0],
+    #     [-1,0,0],
+    #     [0,0,1]
+    # ])
+    # R_x = np.array([
+    #     [1,0,0],
+    #     [0,0,-1],
+    #     [0,1,0]
+    # ])
+    # R_zx = np.dot(R_x,R_z)
+    # R = np.dot(R_1,R_zx)
+
+
+    # # t = np.array([
+    # #     [r * np.cos(theta_rad)],
+    # #     [0],
+    # #     [r * np.sin(theta_rad)]
+    # # ])
+    # t = np.array([ # constant wrt Z axis
+    #     [r * np.cos(theta_rad)],
+    #     [r * np.sin(theta_rad)],
+    #     [0]
+    # ])
+
+    R = np.array([
+        [-np.sin(theta_rad), np.cos(theta_rad), 0],
+        [0, 0, -1],
+        [-np.cos(theta_rad), -np.sin(theta_rad), 0]
+        ])
+    t = np.array([r * np.cos(theta_rad), r * np.sin(theta_rad), 0])
     return R, t
 
 
@@ -43,7 +52,8 @@ def compute_extrinsics(theta_deg, r):
 def extrinsic_to_homogeneous(R, t):
     homogeneous_matrix = np.eye(4)
     homogeneous_matrix[:3, :3] = R
-    homogeneous_matrix[:3, 3] = t.flatten()
+    T = -np.dot(R, t)
+    homogeneous_matrix[:3, 3] = T.flatten()
     return homogeneous_matrix
 
 #covert world coordinate to camera coordinate

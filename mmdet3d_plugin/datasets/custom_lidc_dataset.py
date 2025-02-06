@@ -216,6 +216,16 @@ class CustomLIDCDataset(Custom3DDataset):
             # lidar2cam_rt[3, :3] = -lidar2cam_t
             lidar2cam_rt = extrinsics[cam_idx]
             intrinsic = cam_info['cam_intrinsic']
+            #convert intrinsic values from mm to pixels
+            pixel_size = 800/1024
+            intrinsic[0, 0] = intrinsic[0, 0] / pixel_size
+            intrinsic[1, 1] = intrinsic[1, 1] / pixel_size
+            intrinsic[0, 2] = intrinsic[0, 2] / pixel_size
+            intrinsic[1, 2] = intrinsic[1, 2] / pixel_size 
+            #recenter back to 0,0
+            intrinsic[0, 2] = -intrinsic[0, 2]
+            intrinsic[1, 2] = -intrinsic[1, 2]
+
             viewpad = np.eye(4)
             viewpad[:intrinsic.shape[0], :intrinsic.shape[1]] = intrinsic
             lidar2img_rt = (viewpad @ lidar2cam_rt.T)
@@ -353,18 +363,7 @@ class CustomLIDCDataset(Custom3DDataset):
         #print("gt_bboxes_3d after compute", gt_bboxes_3d)
 
 
-        #print("Xc", Xc)
 
-        #Adjust for the SID (Source is at 300,0,0 and detector is at -300,0,0)
-        SID = 600
-        gt_bboxes_3d[:][0] += SID
-        Xc = [x + SID for x in Xc]
-
-        #compute the scaling factor
-        #scaling_factor = [SID/ x for x in Xc]
-        scaling_factor = [SID] * len(Xc)
-
-        #print("scaling_factor", scaling_factor)
 
 
 
